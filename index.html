@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Anime Battle RPG</title>
+    <!-- Подключаем скрипт Telegram обязательно в начале -->
+    <script src="https://telegram.org"></script>
+    <style>
+        body {
+            background-color: #0f0f1a;
+            color: white;
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .hp-label { font-weight: bold; margin: 10px 0; }
+        .boss-name { color: #e94560; font-size: 24sp; }
+        
+        #question-box {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #00ffcc;
+            margin: 20px 0;
+            width: 90%;
+            text-align: center;
+        }
+
+        .btn-pay {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: black;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 18px;
+            margin-top: 30px;
+            width: 100%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hp-label">БОСС: <span class="boss-name">ОРОЧИМАРУ</span></div>
+    <div id="question-box">ЗАГРУЗКА ИГРЫ...</div>
+
+    <!-- Твоя золотая кнопка для донатов -->
+    <button class="btn-pay" onclick="sendBuyRequest()">
+        ⭐ КУПИТЬ 100 ЗОЛОТА (1 ★)
+    </button>
+
+    <script>
+        // Сообщаем Telegram, что приложение готово
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand(); // Разворачиваем на весь экран
+
+        // Выводим приветствие
+        const user = tg.initDataUnsafe.user;
+        document.getElementById('question-box').innerText = 
+            "Привет, " + (user ? user.first_name : "Герой") + "! Готов к битве?";
+
+        function sendBuyRequest() {
+            // Отправляем данные боту (он поймает их и выставит счет)
+            const data = JSON.stringify({action: "buy_stars"});
+            tg.sendData(data);
+        }
+    </script>
+</body>
+</html>
