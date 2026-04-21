@@ -1,76 +1,76 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Anime Battle RPG</title>
-    <!-- Подключаем скрипт Telegram обязательно в начале -->
     <script src="https://telegram.org"></script>
     <style>
-        body {
-            background-color: #0f0f1a;
-            color: white;
-            font-family: sans-serif;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .hp-label { font-weight: bold; margin: 10px 0; }
-        .boss-name { color: #e94560; font-size: 24sp; }
-        
-        #question-box {
-            background: #16213e;
-            padding: 20px;
-            border-radius: 15px;
-            border: 2px solid #00ffcc;
-            margin: 20px 0;
-            width: 90%;
-            text-align: center;
-        }
-
-        .btn-pay {
-            background: linear-gradient(45deg, #FFD700, #FFA500);
-            color: black;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 12px;
-            font-weight: bold;
-            font-size: 18px;
-            margin-top: 30px;
-            width: 100%;
-            cursor: pointer;
-        }
+        body { background: #0f0f1a; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
+        .hp-box { font-size: 20px; font-weight: bold; margin: 10px; }
+        #boss-hp { color: #ff4d4d; }
+        #player-hp { color: #00d9ff; }
+        #question { background: #16213e; padding: 15px; border-radius: 10px; border: 1px solid #00ffcc; margin: 20px 0; min-height: 40px; }
+        #slots { display: flex; justify-content: center; gap: 5px; margin-bottom: 20px; }
+        .slot { width: 35px; height: 35px; border-bottom: 2px solid #00ffcc; font-size: 24px; }
+        #letters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .letter-btn { background: #1a1a2e; border: 1px solid #34495e; color: white; padding: 15px 0; border-radius: 8px; font-size: 18px; }
+        .letter-btn:active { background: #00ffcc; color: black; }
     </style>
 </head>
 <body>
-
-    <div class="hp-label">БОСС: <span class="boss-name">ОРОЧИМАРУ</span></div>
-    <div id="question-box">ЗАГРУЗКА ИГРЫ...</div>
-
-    <!-- Твоя золотая кнопка для донатов -->
-    <button class="btn-pay" onclick="sendBuyRequest()">
-        ⭐ КУПИТЬ 100 ЗОЛОТА (1 ★)
-    </button>
+    <div class="hp-box">БОСС HP: <span id="boss-hp">100</span></div>
+    <div class="hp-box">ВАШЕ HP: <span id="player-hp">100</span></div>
+    
+    <div id="question">ЗАГРУЗКА БИТВЫ...</div>
+    <div id="slots"></div>
+    <div id="letters"></div>
 
     <script>
-        // Сообщаем Telegram, что приложение готово
         const tg = window.Telegram.WebApp;
         tg.ready();
-        tg.expand(); // Разворачиваем на весь экран
+        tg.expand();
 
-        // Выводим приветствие
-        const user = tg.initDataUnsafe.user;
-        document.getElementById('question-box').innerText = 
-            "Привет, " + (user ? user.first_name : "Герой") + "! Готов к битве?";
+        let questions = [{q: "Имя девятихвостого лиса?", a: "КУРАМА"}];
+        let cur = 0, currentInput = "", bHP = 100, pHP = 100;
 
-        function sendBuyRequest() {
-            // Отправляем данные боту (он поймает их и выставит счет)
-            const data = JSON.stringify({action: "buy_stars"});
-            tg.sendData(data);
+        function init() {
+            const q = questions[cur];
+            document.getElementById('question').innerText = q.q;
+            const slots = document.getElementById('slots');
+            slots.innerHTML = "";
+            for(let i=0; i<q.a.length; i++) slots.innerHTML += `<div class="slot" id="s${i}"></div>`;
+            
+            const grid = document.getElementById('letters');
+            grid.innerHTML = "";
+            let chars = (q.a + "АБВГДЕ").split('').sort(() => Math.random() - 0.5);
+            chars.forEach(c => {
+                let btn = document.createElement('button');
+                btn.className = 'letter-btn';
+                btn.innerText = c;
+                btn.onclick = () => {
+                    if(currentInput.length < q.a.length) {
+                        document.getElementById('s'+currentInput.length).innerText = c;
+                        currentInput += c;
+                        btn.style.visibility = "hidden";
+                        if(currentInput.length == q.a.length) check();
+                    }
+                };
+                grid.appendChild(btn);
+            });
         }
+
+        function check() {
+            if(currentInput == questions[cur].a) {
+                bHP -= 50;
+                document.getElementById('boss-hp').innerText = bHP;
+                if(bHP <= 0) alert("ПОБЕДА!"); else { currentInput = ""; init(); }
+            } else {
+                tg.HapticFeedback.notificationOccurred('error');
+                alert("ОШИБКА! СТАН 2 СЕК");
+                setTimeout(() => { currentInput = ""; init(); }, 2000);
+            }
+        }
+        init();
     </script>
 </body>
 </html>
