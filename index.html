@@ -5,50 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org"></script>
     <style>
-        :root { --gold: #d4af37; --bg: #0d0d12; --energy: #00ffcc; }
-        body { background: var(--bg); color: #f4e4bc; font-family: sans-serif; margin: 0; padding: 0; text-align: center; }
-        .stats-bar { display: flex; justify-content: space-around; background: #111; padding: 10px; border-bottom: 2px solid var(--gold); font-weight: bold; font-size: 14px; }
-        .container { padding: 15px; }
-        .glass-card { background: #1a1a24; border: 2px solid var(--gold); border-radius: 15px; padding: 20px; text-align: left; line-height: 1.6; margin-bottom: 20px; font-style: italic; }
-        #dice { width: 65px; height: 65px; background: #880808; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 26px; font-weight: bold; border-radius: 12px; border: 2px solid var(--gold); transition: 0.3s; }
-        .btn-opt { background: #2b1d0e; border: 1px solid var(--gold); color: var(--gold); padding: 16px; width: 100%; border-radius: 12px; font-size: 15px; margin-bottom: 12px; cursor: pointer; font-weight: bold; display: block; }
-        .roll-anim { animation: shake 0.3s infinite; }
+        :root { --gold: #d4af37; --bg: #0d0d12; }
+        body { background: var(--bg); color: #f4e4bc; font-family: sans-serif; text-align: center; padding: 20px; }
+        .card { background: #1a1a24; border: 2px solid var(--gold); border-radius: 15px; padding: 20px; text-align: left; margin-bottom: 20px; min-height: 100px; }
+        #dice { width: 70px; height: 70px; background: #880808; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 30px; font-weight: bold; border-radius: 12px; border: 2px solid var(--gold); }
+        .btn { background: #2b1d0e; border: 1px solid var(--gold); color: var(--gold); padding: 16px; width: 100%; border-radius: 12px; font-size: 16px; margin-bottom: 10px; cursor: pointer; font-weight: bold; }
+        .anim { animation: shake 0.3s infinite; }
         @keyframes shake { 0% {transform: rotate(5deg)} 50% {transform: rotate(-5deg)} 100% {transform: rotate(5deg)} }
     </style>
 </head>
 <body>
-    <div class="stats-bar">
-        <span style="color:var(--energy)">⚡ Энергия: <span id="env">10</span>/10</span>
-        <span style="color:var(--gold)">💰 Золото: 50</span>
-    </div>
-    <div class="container">
-        <div id="dice">d20</div>
-        <div class="glass-card" id="st">Мастер: Выберите действие, и я опишу последствия в чате!</div>
-        <div id="opts">
-            <button class="btn-opt" onclick="go('Искать Орочимару')">🐍 Искать Орочимару</button>
-            <button class="btn-opt" onclick="go('Тренироваться')">🥋 Тренировка</button>
-            <button class="btn-opt" onclick="go('Зайти в Ичираку')">🍜 В Ичираку!</button>
-        </div>
+    <h2 style="color: var(--gold)">ANIME AI RPG</h2>
+    <div id="dice">d20</div>
+    <div class="card" id="st">Мастер: Выбери действие, брось кубик и читай историю в чате бота!</div>
+    <div id="opts">
+        <button class="btn" onclick="send('Исследовать темный лес')">🌲 Пойти в лес</button>
+        <button class="btn" onclick="send('Искать сокровища в пещере')">💎 Искать лут</button>
+        <button class="btn" onclick="send('Напасть на патруль Орочимару')">⚔️ Напасть!</button>
     </div>
     <script>
         const tg = window.Telegram.WebApp;
         tg.ready(); tg.expand();
-        let energy = 10;
 
-        function go(text) {
-            if(energy <= 0) return alert("Нет энергии!");
-            energy--;
-            document.getElementById('env').innerText = energy;
+        function send(text) {
             const die = document.getElementById('dice');
-            die.classList.add('roll-anim');
-            
+            die.classList.add('anim');
             const roll = Math.floor(Math.random() * 20) + 1;
+            
             setTimeout(() => {
                 die.innerText = roll;
-                die.classList.remove('roll-anim');
-                // Шлем данные боту
-                tg.sendData(JSON.stringify({action: "ai", msg: text, roll: roll}));
-                document.getElementById('st').innerText = "Судьба решена! Закрой игру и читай ответ Мастера в чате.";
+                die.classList.remove('anim');
+                // Отправляем данные БОТУ, бот сам пойдет к ИИ
+                tg.sendData(JSON.stringify({msg: text, roll: roll}));
+                document.getElementById('st').innerText = "Судьба решена! Закрой игру и смотри ответ в чате.";
+                document.getElementById('opts').style.display = 'none';
             }, 600);
         }
     </script>
