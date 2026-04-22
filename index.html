@@ -5,21 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Path of Shinobi</title>
     
-    <!-- Подключаем только самое необходимое через CDN, который не блокирует CORS -->
+    <!-- ИСПРАВЛЕНО: Прямые ссылки на скрипты -->
     <script src="https://telegram.org"></script>
-    <script src="https://jsdelivr.net"></script>
-    <script src="https://jsdelivr.net"></script>
+    <script src="https://gstatic.com"></script>
+    <script src="https://gstatic.com"></script>
 
     <style>
         :root { --gold: #d4af37; --bg: #0d0d12; --card: #1a1a24; --accent: #00ffcc; }
-        body { background: var(--bg); color: #f4e4bc; font-family: sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        body { background: var(--bg); color: #f4e4bc; font-family: sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; opacity: 1; }
         .top-info { width: 100%; padding: 20px; background: linear-gradient(180deg, rgba(212, 175, 55, 0.1) 0%, rgba(0,0,0,0) 100%); text-align: center; box-sizing: border-box; }
-        .profile-card { background: var(--card); border: 2px solid var(--gold); border-radius: 25px; padding: 20px; width: 85%; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); box-sizing: border-box; }
+        .profile-card { background: var(--card); border: 2px solid var(--gold); border-radius: 25px; padding: 20px; width: 85%; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .stat-row { display: flex; justify-content: space-between; margin: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 3px; font-size: 14px; }
         .main-btn { background: linear-gradient(135deg, #800 0%, #c00 100%); color: white; border: none; padding: 16px; width: 85%; border-radius: 15px; font-size: 18px; font-weight: bold; text-transform: uppercase; text-decoration: none; display: block; text-align: center; margin-bottom: 12px; }
-        .sub-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 85%; margin-bottom: 20px; }
-        .side-btn { background: var(--card); border: 1px solid #333; color: white; padding: 12px; border-radius: 12px; text-decoration: none; font-size: 12px; font-weight: bold; text-align: center; }
-        .chat-box { width: 85%; background: var(--card); border: 1px solid #333; border-radius: 20px; padding: 15px; box-sizing: border-box; margin-bottom: 20px; }
+        .chat-box { width: 85%; background: var(--card); border: 1px solid #333; border-radius: 20px; padding: 15px; box-sizing: border-box; }
         .chat-messages { height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; text-align: left; }
         .msg { font-size: 12px; background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 10px; }
         .msg b { color: var(--gold); }
@@ -29,24 +27,17 @@
     </style>
 </head>
 <body>
-
     <div class="top-info">
         <h1 id="hero-name" style="margin:0; font-size: 24px;">Шиноби</h1>
-        <div style="color:var(--gold); font-size: 12px; margin-top:5px;">Рекорд: <span id="max-floor">1</span> этаж</div>
     </div>
 
     <div class="profile-card">
         <div class="stat-row"><span>💰 Золото:</span> <b id="hero-gold">0</b></div>
-        <div class="stat-row"><span>⚡ Энергия:</span> <b id="hero-nrg" style="color:var(--accent)">0/10</b></div>
+        <div class="stat-row"><span>⚡ Энергия:</span> <b id="hero-nrg">0/10</b></div>
         <div class="stat-row"><span>❤️ HP:</span> <b id="hero-hp">0/0</b></div>
     </div>
 
     <a href="map.html" class="main-btn">В ПУТЬ 🗺️</a>
-
-    <div class="sub-btns">
-        <a href="shop.html" class="side-btn">🛒 МАГАЗИН</a>
-        <a href="profile.html" class="side-btn">🎒 СУМКА</a>
-    </div>
 
     <div class="chat-box">
         <div id="chat-msgs" class="chat-messages"></div>
@@ -57,36 +48,13 @@
     </div>
 
     <script>
-        // 1. ДАННЫЕ ИГРОКА И ЛОГИКА
-        let p = JSON.parse(localStorage.getItem('rpg_data')) || {};
-        const tg = window.Telegram ? window.Telegram.WebApp : null;
-        if(tg) tg.ready();
-
-        function initGame() {
-            if (!p.name) { window.location.replace('create.html'); return; }
-            const now = Date.now();
-            const lastTime = p.lastUpdate || now;
-            const diffMs = now - lastTime;
-            
-            if (p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + (diffMs / 60000 * 10));
-            if (p.energy === undefined) p.energy = 10;
-            if (p.energy < 10) p.energy = Math.min(10, p.energy + (diffMs / 600000));
-            p.lastUpdate = now;
-            localStorage.setItem('rpg_data', JSON.stringify(p));
-
-            document.getElementById('hero-name').innerText = p.name;
-            document.getElementById('hero-gold').innerText = Math.floor(p.gold);
-            document.getElementById('hero-hp').innerText = Math.floor(p.hp) + '/' + (p.maxHp || 100);
-            document.getElementById('hero-nrg').innerText = Math.floor(p.energy) + '/10';
-            document.getElementById('max-floor').innerText = p.maxFloorReached || 1;
-        }
-
-        // 2. ЧАТ (FIREBASE) - ФУНКЦИЯ ОТПРАВКИ ГЛОБАЛЬНО
+        var p = JSON.parse(localStorage.getItem('rpg_data')) || {};
         var chatRef;
+
         window.sendMsg = function() {
-            const input = document.getElementById('chat-in');
+            var input = document.getElementById('chat-in');
             if (!input || !chatRef) return;
-            const text = input.value.trim();
+            var text = input.value.trim();
             if (text && p.name) {
                 chatRef.push({ user: p.name, text: text, timestamp: Date.now() });
                 input.value = "";
@@ -94,8 +62,8 @@
         };
 
         window.onload = function() {
-            const config = {
-                apiKey: atob("QUl6YVN5QUpiOTVTa0VyZFFoLWtOZ25BMWg0dWlQZTZhNndVdW9n"), // Шифрованный ключ
+            var config = {
+                apiKey: atob("QUl6YVN5QUpiOTVTa0VyZFFoLWtOZ25BMWg0dWlQZTZhNndVdW9n"),
                 authDomain: "://firebaseapp.com",
                 databaseURL: "https://firebaseio.com",
                 projectId: "shinobichat-f6a61",
@@ -107,19 +75,26 @@
             if (typeof firebase !== 'undefined') {
                 firebase.initializeApp(config);
                 chatRef = firebase.database().ref('messages');
-                chatRef.limitToLast(20).on('value', (snap) => {
-                    const box = document.getElementById('chat-msgs');
+                chatRef.limitToLast(20).on('value', function(snap) {
+                    var box = document.getElementById('chat-msgs');
                     box.innerHTML = "";
-                    const data = snap.val();
+                    var data = snap.val();
                     if (data) {
-                        Object.values(data).forEach(m => {
-                            box.innerHTML += `<div class="msg"><b>${m.user}:</b> ${m.text}</div>`;
+                        Object.values(data).forEach(function(m) {
+                            box.innerHTML += '<div class="msg"><b>' + m.user + ':</b> ' + m.text + '</div>';
                         });
                         box.scrollTop = box.scrollHeight;
                     }
                 });
             }
-            initGame();
+
+            if (!p.name) { window.location.replace('create.html'); }
+            else {
+                document.getElementById('hero-name').innerText = p.name;
+                document.getElementById('hero-gold').innerText = Math.floor(p.gold || 0);
+                document.getElementById('hero-hp').innerText = Math.floor(p.hp || 100) + '/' + (p.maxHp || 100);
+                document.getElementById('hero-nrg').innerText = Math.floor(p.energy || 10) + '/10';
+            }
         };
     </script>
 </body>
