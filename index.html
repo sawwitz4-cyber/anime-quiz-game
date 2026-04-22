@@ -3,106 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Quests and dungeonS</title>
+    <title>Anime RPG Fix</title>
     <script src="https://telegram.org"></script>
     <style>
-        :root { --gold: #d4af37; --bg: #0d0d12; --card: #1a1a24; --hp: #ff4d4d; --diamond: #00e5ff; }
-        body { background: var(--bg); color: #f4e4bc; font-family: sans-serif; margin: 0; padding: 0; overflow-x: hidden; user-select: none; }
-        .screen { display: none; padding: 15px; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
-        .active { display: flex !important; }
+        :root { --gold: #d4af37; --bg: #0d0d12; --card: #1a1a24; --hp: #ff4d4d; --dia: #00e5ff; }
+        body { background: var(--bg); color: #f4e4bc; font-family: sans-serif; margin: 0; padding: 0; overflow: hidden; user-select: none; }
+        
+        /* Статус бар всегда виден */
         .header { background: #111; padding: 12px; border-bottom: 2px solid var(--gold); display: flex; justify-content: space-around; font-weight: bold; width: 100%; position: sticky; top: 0; z-index: 100; font-size: 12px; }
+        
+        .screen { display: none; padding: 15px; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; width: 100%; }
+        .active { display: flex !important; } /* Силой заставляем экран появиться */
+
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; margin-top: 20px; }
         .menu-item { background: var(--card); border: 1px solid #333; border-radius: 18px; padding: 20px 10px; text-align: center; cursor: pointer; }
-        .btn-action { background: linear-gradient(180deg, #ff4d4d, #800); color: white; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; border: none; margin-top: 15px; }
+        
+        .btn-action { background: linear-gradient(180deg, #ff4d4d, #800); color: white; padding: 15px; width: 85%; border-radius: 12px; font-weight: bold; border: none; margin-top: 15px; font-size: 16px; }
         .hp-bar { width: 100%; height: 12px; background: #222; border-radius: 6px; overflow: hidden; margin: 10px 0; border: 1px solid #444; }
-        .hp-fill { height: 100%; transition: width 0.4s; }
-        #dice { width: 60px; height: 60px; background: #800; color: white; display: flex; align-items: center; justify-content: center; margin: 15px auto; font-size: 24px; font-weight: bold; border-radius: 12px; border: 2px solid var(--gold); }
-        .input-name { background: #222; border: 1px solid var(--gold); color: white; padding: 15px; border-radius: 10px; width: 80%; margin: 20px 0; text-align: center; }
-        .roll { animation: shake 0.3s infinite; }
-        @keyframes shake { 0% {transform: rotate(3deg)} 50% {transform: rotate(-3deg)} 100% {transform: rotate(3deg)} }
+        .hp-fill { height: 100%; transition: width 0.4s; background: var(--hp); }
+        
+        input { background: #222; border: 1px solid var(--gold); color: white; padding: 15px; border-radius: 10px; width: 80%; margin: 20px 0; text-align: center; font-size: 16px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span>❤️ HP: <span id="h-hp">0</span></span>
-        <span>💰 <span id="h-gold">0</span></span>
+        <span>❤️ HP: <span id="h-hp">100</span></span>
+        <span>💰 <span id="h-gold">50</span></span>
         <span>💎 <span id="h-dia">0</span></span>
     </div>
 
-    <!-- ЭКРАН 0: СОЗДАНИЕ ПЕРСОНАЖА -->
+    <!-- ЭКРАН 1: СОЗДАНИЕ -->
     <div id="scr-create" class="screen">
         <h2 style="color:var(--gold)">НОВЫЙ ГЕРОЙ</h2>
-        <p>Как тебя называть, шиноби?</p>
-        <input type="text" id="in-name" class="input-name" placeholder="Твое имя...">
+        <input type="text" id="in-name" placeholder="Твое имя...">
         <button class="btn-action" onclick="finishCreate()">ПРОБУДИТЬ СИЛУ</button>
     </div>
 
-    <!-- ЭКРАН 1: ГЛАВНОЕ МЕНЮ -->
+    <!-- ЭКРАН 2: МЕНЮ -->
     <div id="scr-menu" class="screen">
-        <h2 id="m-name" style="margin-bottom:0">Герой</h2>
-        <p id="m-lvl" style="font-size:12px; color:var(--gold)">Уровень 1</p>
+        <h2 id="m-name" style="margin-bottom:5px">Герой</h2>
+        <p style="font-size:12px; color:var(--gold); margin:0">Уровень 1</p>
+        
         <div class="menu-grid">
             <div class="menu-item" style="grid-column: span 2; background: #800;" onclick="startBattle()">⚔️ В БОЙ</div>
-            <div class="menu-item" onclick="show('scr-shop')">🛒 ЛАВКА</div>
-            <div class="menu-item" onclick="getFreeDiamond()">📺 АЛМАЗ</div>
+            <div class="menu-item" onclick="alert('Магазин скоро!')">🛒 ЛАВКА</div>
+            <div class="menu-item" onclick="getFreeDiamond()">📺 АЛМАЗ ЗА РЕКЛАМУ</div>
         </div>
-        <button class="btn-action" style="background:#222; border:1px solid #444; margin-top:40px; font-size:10px;" onclick="resetCharacter()">СБРОСИТЬ (1 💎)</button>
+        
+        <button class="btn-action" style="background:#222; border:1px solid #444; margin-top:40px; font-size:10px;" onclick="resetCharacter()">СБРОСИТЬ ПЕРСОНАЖА (1 💎)</button>
     </div>
 
-    <!-- ЭКРАН 2: БИТВА -->
+    <!-- ЭКРАН 3: БИТВА -->
     <div id="scr-battle" class="screen">
         <h2 style="color:var(--hp)">ОРОЧИМАРУ</h2>
-        <div class="hp-bar"><div id="b-hp-fill" class="hp-fill" style="background:var(--hp); width:100%"></div></div>
-        <div id="dice">d20</div>
-        <p id="log">Твой ход!</p>
+        <div class="hp-bar"><div id="b-hp-fill" class="hp-fill" style="width:100%"></div></div>
+        <p id="log" style="font-size: 14px; font-weight: bold;">Твой ход!</p>
         <button class="btn-action" id="hit-btn" onclick="playerHit()">УДАРИТЬ</button>
-        <p class="back-btn" style="margin-top:20px; color:#666" onclick="show('scr-menu')">Сбежать</p>
+        <p style="margin-top:20px; color:#666" onclick="show('scr-menu')">Сбежать</p>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready(); tg.expand();
+        // Глобальные переменные объявляем сразу
+        var p = { name: "Шиноби", hp: 100, maxHp: 100, gold: 50, dia: 0, dmg: 20 };
+        var b = { hp: 150, maxHp: 150, str: 15 };
 
-        // 1. ПЕРЕМЕННЫЕ ОБЪЯВЛЕНЫ В САМОМ НАЧАЛЕ (Исправляет ReferenceError)
-        let p = { name: "", hp: 100, maxHp: 100, gold: 50, dia: 0, lvl: 1, dmg: 20 };
-        let b = { hp: 150, maxHp: 150, str: 15 };
-
-        // Загрузка
-        const saved = localStorage.getItem('rpg_v3');
-        if(saved) {
-            p = JSON.parse(saved);
-            show('scr-menu');
-        } else {
-            show('scr-create');
+        function updateUI() {
+            try {
+                document.getElementById('h-hp').innerText = p.hp;
+                document.getElementById('h-gold').innerText = p.gold;
+                document.getElementById('h-dia').innerText = p.dia;
+                if(document.getElementById('m-name')) document.getElementById('m-name').innerText = p.name;
+            } catch(e) { console.error(e); }
         }
 
         function show(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+            var screens = document.getElementsByClassName('screen');
+            for(var i=0; i<screens.length; i++) {
+                screens[i].classList.remove('active');
+            }
+            var target = document.getElementById(id);
+            if(target) target.classList.add('active');
             updateUI();
         }
 
         function finishCreate() {
-            const name = document.getElementById('in-name').value.trim();
+            var name = document.getElementById('in-name').value.trim();
             p.name = name || "Шиноби";
             save();
             show('scr-menu');
         }
 
-        function updateUI() {
-            document.getElementById('h-hp').innerText = p.hp;
-            document.getElementById('h-gold').innerText = p.gold;
-            document.getElementById('h-dia').innerText = p.dia;
-            if(document.getElementById('m-name')) document.getElementById('m-name').innerText = p.name;
-        }
-
-        function save() {
-            localStorage.setItem('rpg_v3', JSON.stringify(p));
-        }
-
         function getFreeDiamond() {
-            tg.HapticFeedback.impactOccurred('medium');
             alert("Реклама просмотрена! +1 💎");
             p.dia += 1;
             save();
@@ -113,65 +105,62 @@
             if(p.dia >= 1) {
                 if(confirm("Сбросить персонажа за 1 алмаз?")) {
                     p.dia -= 1;
-                    localStorage.removeItem('rpg_v3');
+                    localStorage.removeItem('rpg_v4');
                     location.reload();
                 }
             } else {
-                alert("Недостаточно алмазов! Посмотри рекламу.");
+                alert("Нужен 1 алмаз! Посмотри рекламу.");
             }
         }
 
         function startBattle() {
             b.hp = b.maxHp;
             show('scr-battle');
-            updateBattleUI();
-        }
-
-        function updateBattleUI() {
-            document.getElementById('b-hp-fill').style.width = (b.hp / b.maxHp * 100) + "%";
+            document.getElementById('b-hp-fill').style.width = "100%";
         }
 
         function playerHit() {
-            const die = document.getElementById('dice');
-            die.classList.add('roll');
-            document.getElementById('hit-btn').disabled = true;
+            var roll = Math.floor(Math.random() * 20) + 1;
+            var dmg = Math.floor(p.dmg * (roll / 10));
+            b.hp = Math.max(0, b.hp - dmg);
+            document.getElementById('log').innerText = "Ты нанес " + dmg + " урона!";
+            document.getElementById('b-hp-fill').style.width = (b.hp / b.maxHp * 100) + "%";
 
-            setTimeout(() => {
-                die.classList.remove('roll');
-                const roll = Math.floor(Math.random() * 20) + 1;
-                die.innerText = roll;
-                let dmg = Math.floor(p.dmg * (roll / 10));
-                
-                b.hp = Math.max(0, b.hp - dmg);
-                document.getElementById('log').innerText = `Ты нанес ${dmg} урона!`;
-                updateBattleUI();
-
-                if(b.hp <= 0) {
-                    alert("ПОБЕДА!");
-                    p.gold += 50;
-                    save();
-                    show('scr-menu');
-                } else {
-                    setTimeout(bossHit, 800);
-                }
-            }, 600);
-        }
-
-        function bossHit() {
-            let dmg = b.str + Math.floor(Math.random() * 5);
-            p.hp = Math.max(0, p.hp - dmg);
-            document.getElementById('log').innerText = `Босс ударил: -${dmg} HP`;
-            updateUI();
-            if(p.hp <= 0) {
-                alert("Ты пал...");
-                p.hp = p.maxHp;
-                save();
-                show('scr-menu');
+            if(b.hp <= 0) {
+                alert("ПОБЕДА!");
+                p.gold += 50; save(); show('scr-menu');
             } else {
-                document.getElementById('hit-btn').disabled = false;
+                setTimeout(bossHit, 800);
             }
         }
 
+        function bossHit() {
+            var bDmg = b.str + Math.floor(Math.random() * 5);
+            p.hp = Math.max(0, p.hp - bDmg);
+            document.getElementById('log').innerText = "Босс ударил: -" + bDmg + " HP";
+            updateUI();
+            if(p.hp <= 0) {
+                alert("ТЫ ПАЛ...");
+                p.hp = p.maxHp; save(); show('scr-menu');
+            }
+        }
+
+        function save() { localStorage.setItem('rpg_v4', JSON.stringify(p)); }
+
+        // Запуск строго после загрузки DOM
+        window.onload = function() {
+            var tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+
+            var saved = localStorage.getItem('rpg_v4');
+            if(saved) {
+                p = JSON.parse(saved);
+                show('scr-menu');
+            } else {
+                show('scr-create');
+            }
+        };
     </script>
 </body>
 </html>
