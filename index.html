@@ -5,89 +5,101 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org"></script>
     <style>
-        :root { --neon: #00ffcc; --bg: #0a0a12; }
-        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; padding: 0; }
+        body { 
+            background-color: #0a0a12; 
+            color: white; 
+            font-family: sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+        }
         
-        /* Все экраны скрыты по умолчанию */
-        .screen { display: none; padding: 20px; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
-        
-        /* Только активный экран виден */
-        .active { display: flex !important; }
+        /* Заставка загрузки, которая видна СРАЗУ */
+        #loading { 
+            display: block; 
+            margin-top: 50px; 
+            color: #00ffcc; 
+        }
 
-        .btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 18px; 
-               border-radius: 15px; font-size: 16px; font-weight: bold; width: 100%; margin: 10px 0; cursor: pointer; }
-        .btn-main { background: linear-gradient(90deg, #e94560, #ff2e63); border: none; }
+        /* Экраны скрыты, пока JS не скажет иначе */
+        .screen { display: none; width: 100%; flex-direction: column; align-items: center; }
         
-        input { background: #1a1a2e; border: 1px solid var(--neon); color: white; padding: 15px; border-radius: 12px; width: 90%; margin: 20px 0; font-size: 18px; }
-        
-        .hero-img { width: 150px; height: 150px; border-radius: 50%; border: 3px solid var(--neon); margin: 20px; box-shadow: 0 0 15px var(--neon); }
+        .btn { 
+            background: #16213e; 
+            border: 1px solid #00ffcc; 
+            color: white; 
+            padding: 15px; 
+            border-radius: 10px; 
+            width: 100%; 
+            margin: 10px 0; 
+            font-size: 18px; 
+            cursor: pointer;
+        }
+
+        input { 
+            background: #1a1a2e; 
+            border: 1px solid #00ffcc; 
+            color: white; 
+            padding: 15px; 
+            border-radius: 10px; 
+            width: 90%; 
+            margin-bottom: 20px; 
+        }
     </style>
 </head>
 <body>
 
-    <!-- ЭКРАН 1: СОЗДАНИЕ -->
+    <!-- Это видно пока грузится скрипт -->
+    <div id="loading">ЗАГРУЗКА ДАННЫХ...</div>
+
+    <!-- ЭКРАН СОЗДАНИЯ -->
     <div id="screen-create" class="screen">
-        <h1 style="color: var(--neon)">НОВЫЙ ГЕРОЙ</h1>
-        <input type="text" id="p-name-input" placeholder="Введите имя...">
-        <p>Выбери свою стихию:</p>
-        <button class="btn" onclick="setElement('🔥 Огонь', 'https://icons8.com')">🔥 СТИХИЯ ОГНЯ</button>
-        <button class="btn" onclick="setElement('💧 Вода', 'https://icons8.com')">💧 СТИХИЯ ВОДЫ</button>
-        <button id="start-btn" class="btn btn-main" style="display:none;" onclick="saveCharacter()">ПРОБУДИТЬ СИЛУ</button>
+        <h1 style="color: #00ffcc">НОВЫЙ ГЕРОЙ</h1>
+        <input type="text" id="p-name" placeholder="Твое имя...">
+        <button class="btn" onclick="saveHero()">СОЗДАТЬ ПЕРСОНАЖА</button>
     </div>
 
-    <!-- ЭКРАН 2: МЕНЮ -->
+    <!-- ГЛАВНОЕ МЕНЮ -->
     <div id="screen-menu" class="screen">
-        <h2 id="stat-name">---</h2>
-        <img id="hero-avatar" src="" class="hero-img">
-        <p>Золото: <span id="stat-gold">0</span> 💰</p>
-        <button class="btn btn-main" onclick="alert('Битва скоро появится!')">⚔️ В БОЙ</button>
-        <button class="btn" onclick="tg.close()">ВЫХОД</button>
+        <h1 id="hero-name">---</h1>
+        <button class="btn" style="background: linear-gradient(45deg, #e94560, #ff2e63); border: none;" onclick="alert('Битва в разработке!')">⚔️ В БОЙ</button>
+        <button class="btn" onclick="clearData()">СБРОСИТЬ ПРОГРЕСС</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
 
-        let player = { name: "", element: "", avatar: "", gold: 100 };
-
-        function showScreen(id) {
-            // Скрываем все
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            // Показываем нужный
-            const target = document.getElementById(id);
-            if (target) target.classList.add('active');
+        // Функция переключения
+        function show(id) {
+            document.getElementById('loading').style.display = 'none';
+            document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+            document.getElementById(id).style.display = 'flex';
         }
 
-        function setElement(el, img) {
-            player.element = el;
-            player.avatar = img;
-            document.getElementById('start-btn').style.display = 'block';
+        function saveHero() {
+            const name = document.getElementById('p-name').value || "Шиноби";
+            localStorage.setItem('hero_data', name);
+            location.reload(); // Перезагружаем, чтобы сработала логика входа
         }
 
-        function saveCharacter() {
-            const nameInput = document.getElementById('p-name-input').value;
-            player.name = nameInput || "Шиноби";
-            localStorage.setItem('anime_rpg_v3', JSON.stringify(player));
-            updateUI();
-            showScreen('screen-menu');
+        function clearData() {
+            localStorage.removeItem('hero_data');
+            location.reload();
         }
 
-        function updateUI() {
-            document.getElementById('stat-name').innerText = player.name + " (" + player.element + ")";
-            document.getElementById('stat-gold').innerText = player.gold;
-            document.getElementById('hero-avatar').src = player.avatar;
-        }
-
-        // Логика запуска
+        // Запуск при загрузке страницы
         window.onload = () => {
-            const saved = localStorage.getItem('anime_rpg_v3');
-            if (saved) {
-                player = JSON.parse(saved);
-                updateUI();
-                showScreen('screen-menu');
+            tg.ready();
+            tg.expand();
+
+            const savedName = localStorage.getItem('hero_data');
+            if (savedName) {
+                document.getElementById('hero-name').innerText = "Привет, " + savedName;
+                show('screen-menu');
             } else {
-                showScreen('screen-create');
+                show('screen-create');
             }
         };
     </script>
