@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>БИТВА С БОССОМ</title>
+    <script src="https://telegram.org"></script>
+    <style>
+        :root { --gold: #d4af37; --bg: #0d0d12; --hp: #ff3333; --mana: #0099ff; --orange: #ff6600; }
+        body { background: var(--bg); color: #f4e4bc; font-family: sans-serif; margin: 0; padding: 0; text-align: center; user-select: none; overflow: hidden; }
+        #flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; opacity: 0; transition: opacity 0.1s; }
+        .stats-bar { display: flex; justify-content: space-around; background: #111; padding: 10px; border-bottom: 2px solid var(--gold); font-weight: bold; font-size: 12px; }
+        .container { padding: 15px; }
+        .boss-card { background: #1a1a24; border: 2px solid #444; border-radius: 12px; padding: 15px; width: 90%; margin: 0 auto 15px; transition: 0.2s; }
+        #dice { width: 70px; height: 70px; background: #600; color: white; display: flex; align-items: center; justify-content: center; margin: 15px auto; font-size: 28px; font-weight: bold; border-radius: 10px; border: 3px solid var(--gold); box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+        .btn { background: #222; border: 1px solid var(--gold); color: var(--gold); padding: 16px; width: 95%; border-radius: 10px; font-size: 14px; margin-bottom: 10px; cursor: pointer; font-weight: bold; }
+        .btn:disabled { opacity: 0.3; }
+        .bar { width: 100%; height: 12px; background: #222; border-radius: 6px; overflow: hidden; margin: 5px 0; border: 1px solid #444; }
+        .fill { height: 100%; transition: width 0.4s ease-out; }
+        .roll-anim { animation: shake 0.2s infinite; }
+        @keyframes shake { 0% {transform: translate(2px, 2px)} 50% {transform: translate(-2px, -2px)} }
+    </style>
+</head>
+<body>
+    <div id="flash"></div>
+
+    <div class="stats-bar">
+        <span>❤️ HP: <span id="cur-hp">0</span></span>
+        <span>🛡️ КЛАСС: <span id="cur-class">---</span></span>
+    </div>
+
+    <div class="container">
+        <div id="boss-ui" class="boss-card">
+            <div style="display:flex; justify-content:space-between"><b>ОРОЧИМАРУ</b> <span id="b-hp-txt">300/300</span></div>
+            <div class="bar"><div id="b-hp-fill" class="fill" style="background:var(--hp); width:100%"></div></div>
+            <div id="b-talk" style="font-size:11px; color:#888;">"Твоя кровь будет вкусной..."</div>
+        </div>
+
+        <div id="dice">d20</div>
+        <div id="log" style="font-size:14px; font-weight:bold; min-height:40px; margin: 10px 0;">Бросай на инициативу!</div>
+
+        <div id="battle-btns">
+            <button id="btn-init" class="btn" onclick="rollInitiative()">🎲 БРОСОК НА ХОД</button>
+            <button id="btn-hit" class="btn" style="display:none;" onclick="playerHit()">⚔️ АТАКОВАТЬ</button>
+            <button id="btn-skill" class="btn" style="display:none; background:#d30; color:white; border:none;" onclick="useSkill()">🔥 СПОСОБНОСТЬ</button>
+        </div>
+        <a href="index.html" style="color:#666; font-size:12px; text-decoration:none; display:block; margin-top:10px;">🏃 Сбежать</a>
+    </div>
+
+    <script>
+        // 1. Загрузка данных из общей памяти
+        let p = JSON.parse(localStorage.getItem('rpg_data'));
+        let b = { name: "Орочимару", hp: 300, maxHp: 300, str: 28, spd: 8 };
+
+        if(!p) window.location.href = 'create.html';
+
+        function updateUI() {
+            document.getElementById('cur-hp').innerText = p.hp;
+            document.getElementById('cur-class').innerText = p.classTitle;
+            document.getElementById('b-hp-txt').innerText = b.hp + "/300";
+            document.getElementById('b-hp-fill').style.width = (b.hp / b.maxHp * 100) + "%";
+        }
+
+        async function rollInitiative() {
+            let d = document.getElementById('dice');
+            d.classList.add('roll-anim');
+            await new Promise(r => setTimeout(r, 600));
+            d.classList.remove('roll-anim');
+
+            let pr = Math.floor(Math.random()*20)+1;
+            let br = Math.floor(Math.random()*20)+1;
+            d.innerText = pr;
+
+            if((pr + p.spd) >= (br + b.spd)) {
+                document.getElementById('log').innerText = "ТВОЙ ХОД!";
+                document.getElementById('btn-init').style.display = 'none';
+                document.getElementById('btn-hit').style.display = 'block';
+                document.getElementById('btn-skill').style.display = 'block';
+            } else {
+                document.getElementById('log').innerText = "ОН БЫСТРЕЕ!";
+                setTimeout(bossHit, 800);
+            }
+        }
+
+        async function playerHit() {
+            let d = document.getElementById('dice');
+            d.classList.add('roll-anim');
+            await new Promise(r => setTimeout(r, 600));
+            d.classList.remove('roll-anim');
+
+            let r = Math.floor(Math.random()*20)+1;
+            d.innerText = r;
+            
+            if(r >= 8) {
+                let dmg = Math.floor(p.dmg * (r/12));
+                if(r === 20) { dmg *= 2; triggerFlash('white'); }
+                b.hp = Math.max(0, b.hp - dmg);
+                document.getElementById('log').innerText = "УДАР! -" + dmg + " HP";
+                effect('hit');
+            } else {
+                document.getElementById('log').innerText = "ПРОМАХ!";
+            }
+            checkStatus();
+        }
+
+        function useSkill() {
+            let log = "";
+            if(p.classId === 'mage') { 
+                b.hp -= 100; triggerFlash('orange'); log = "🔥 ФАЕРБОЛ! -100 HP"; 
+            }
+            if(p.classId === 'paladin') { 
+                p.hp = Math.min(p.maxHp, p.hp + 50); triggerFlash('lime'); log = "✨ ИСЦЕЛЕНИЕ! +50 HP"; 
+            }
+            if(p.classId === 'assassin') { 
+                b.hp -= 60; b.str -= 5; triggerFlash('purple'); log = "🐍 ЯД! Ослабление врага"; 
+            }
+            document.getElementById('log').innerText = log;
+            document.getElementById('btn-skill').disabled = true;
+            checkStatus();
+        }
+
+        function bossHit() {
+            let dmg = Math.max(12, b.str - Math.floor(p.spd / 2));
+            p.hp = Math.max(0, p.hp - dmg);
+            document.getElementById('log').innerText = "Орочимару бьет: -" + dmg;
+            triggerFlash('rgba(255,0,0,0.4)');
+            if(p.hp <= 0) {
+                alert("ТЫ ПОГИБ...");
+                p.hp = p.maxHp; save();
+                window.location.href = 'index.html';
+            } else {
+                save(); updateUI(); resetBtns();
+            }
+        }
+
+        function checkStatus() {
+            updateUI();
+            if(b.hp <= 0) {
+                alert("ПОБЕДА! +150 золота");
+                p.gold += 150; save();
+                window.location.href = 'index.html';
+            } else {
+                setTimeout(resetBtns, 1200);
+            }
+        }
+
+        function resetBtns() {
+            document.getElementById('btn-init').style.display = 'block';
+            document.getElementById('btn-hit').style.display = 'none';
+            document.getElementById('btn-skill').style.display = 'none';
+        }
+
+        function triggerFlash(c) {
+            let f = document.getElementById('flash');
+            f.style.backgroundColor = c; f.style.opacity = '0.6';
+            setTimeout(() => f.style.opacity = '0', 150);
+        }
+
+        function effect(type) {
+            let bui = document.getElementById('boss-ui');
+            if(type === 'hit') {
+                bui.style.borderColor = 'red';
+                setTimeout(() => bui.style.borderColor = '#444', 200);
+            }
+        }
+
+        function save() { localStorage.setItem('rpg_data', JSON.stringify(p)); }
+
+        updateUI();
+    </script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { background: #0d0d12; color: #f4e4bc; font-family: sans-serif; text-align: center; padding: 20px; }
+        .item { background: #1a1a24; border: 1px solid #444; padding: 15px; margin: 10px 0; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
+        button { background: #d4af37; border: none; padding: 10px; border-radius: 5px; font-weight: bold; }
+        .back { display: block; margin-top: 20px; color: #888; }
+    </style>
+</head>
+<body>
+    <h2>🛒 МАГАЗИН</h2>
+    <p>Твоё золото: <span id="gold">0</span></p>
+
+    <div class="item">
+        <span>🗡️ Острый Кунай (+10 урон)</span>
+        <button onclick="buy('Острый Кунай', 50, 10)">50г</button>
+    </div>
+
+    <div class="item">
+        <span>🛡️ Броня Листа (+50 HP)</span>
+        <button onclick="buy('Броня Листа', 80, 0)">80г</button>
+    </div>
+
+    <a href="index.html" class="back">Назад в меню</a>
+
+    <script>
+        let p = JSON.parse(localStorage.getItem('rpg_data'));
+        document.getElementById('gold').innerText = p.gold;
+
+        function buy(name, price, dmg) {
+            if (p.gold >= price) {
+                p.gold -= price;
+                p.dmg += dmg;
+                p.inv.push(name); // ДОБАВЛЯЕМ В МАССИВ
+                localStorage.setItem('rpg_data', JSON.stringify(p)); // СОХРАНЯЕМ
+                alert("Куплено!");
+                location.reload();
+            } else { alert("Мало золота!"); }
+        }
+    </script>
+</body>
+</html>

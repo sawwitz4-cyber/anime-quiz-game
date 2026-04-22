@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { background: #0d0d12; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        .list { text-align: left; background: #1a1a24; padding: 20px; border-radius: 15px; border: 1px solid #444; }
+    </style>
+</head>
+<body>
+    <h2>🎒 ТВОЙ ИНВЕНТАРЬ</h2>
+    <div class="list" id="inv-list">Пусто...</div>
+    <br>
+    <a href="index.html" style="color: #d4af37;">Назад в меню</a>
+
+    <script>
+        let p = JSON.parse(localStorage.getItem('rpg_data'));
+        if (p.inv.length > 0) {
+            document.getElementById('inv-list').innerHTML = p.inv.join("<br>");
+        }
+    </script>
+</body>
+</html>

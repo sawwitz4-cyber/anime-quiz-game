@@ -1,153 +1,41 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Anime RPG Fix</title>
-    <!-- Скрипт Телеграма — самый первый в head -->
     <script src="https://telegram.org"></script>
     <style>
-        :root { --gold: #d4af37; --bg: #0d0d12; --card: #1a1a24; --hp: #ff4d4d; --dia: #00e5ff; }
-        body { background: var(--bg); color: #f4e4bc; font-family: sans-serif; margin: 0; padding: 0; overflow-x: hidden; user-select: none; }
-        .header { background: #111; padding: 12px; border-bottom: 2px solid var(--gold); display: flex; justify-content: space-around; font-weight: bold; width: 100%; position: sticky; top: 0; z-index: 100; font-size: 12px; }
-        .screen { display: none; padding: 15px; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; width: 100%; }
-        .active { display: flex !important; }
-        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; margin-top: 20px; }
-        .menu-item { background: var(--card); border: 1px solid #333; border-radius: 18px; padding: 20px 10px; text-align: center; cursor: pointer; }
-        .btn-action { background: linear-gradient(180deg, #ff4d4d, #800); color: white; padding: 15px; width: 85%; border-radius: 12px; font-weight: bold; border: none; margin-top: 15px; font-size: 16px; }
-        .hp-bar { width: 100%; height: 12px; background: #222; border-radius: 6px; overflow: hidden; margin: 10px 0; border: 1px solid #444; }
-        .hp-fill { height: 100%; transition: width 0.4s; background: var(--hp); }
-        input { background: #222; border: 1px solid var(--gold); color: white; padding: 15px; border-radius: 10px; width: 80%; margin: 20px 0; text-align: center; font-size: 16px; }
+        body { background: #0d0d12; color: #f4e4bc; font-family: sans-serif; text-align: center; padding: 20px; }
+        .btn { display: block; background: #2b1d0e; border: 1px solid #d4af37; color: #d4af37; padding: 15px; margin: 10px auto; width: 80%; border-radius: 10px; text-decoration: none; font-weight: bold; }
+        .stats { background: #1a1a24; padding: 15px; border-radius: 15px; border: 1px solid #444; margin-bottom: 20px; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <span>❤️ HP: <span id="h-hp">100</span></span>
-        <span>💰 <span id="h-gold">50</span></span>
-        <span>💎 <span id="h-dia">0</span></span>
+    <h2>⛩️ ГЛАВНОЕ МЕНЮ</h2>
+    <div class="stats">
+        <p id="m-name">Загрузка...</p>
+        <p>💰 Золото: <span id="m-gold">0</span> | 💎 Алмазы: <span id="m-dia">0</span></p>
     </div>
 
-    <!-- ЭКРАН 1: СОЗДАНИЕ -->
-    <div id="scr-create" class="screen">
-        <h2 style="color:var(--gold)">НОВЫЙ ГЕРОЙ</h2>
-        <input type="text" id="in-name" placeholder="Твое имя...">
-        <button class="btn-action" onclick="finishCreate()">ПРОБУДИТЬ СИЛУ</button>
-    </div>
+    <!-- Внутри index.html замени старые кнопки на эти -->
+<a href="battle.html" class="btn" style="background: #800; color: white; border: none;">⚔️ ВСТУПИТЬ В БОЙ</a>
+<a href="shop.html" class="btn">🛒 МАГАЗИН</a>
+<a href="profile.html" class="btn">👤 ПЕРСОНАЖ И СУМКА</a>
 
-    <!-- ЭКРАН 2: МЕНЮ -->
-    <div id="scr-menu" class="screen">
-        <h2 id="m-name">Герой</h2>
-        <div class="menu-grid">
-            <div class="menu-item" style="grid-column: span 2; background: #800;" onclick="startBattle()">⚔️ В БОЙ</div>
-            <div class="menu-item" onclick="getFreeDiamond()">📺 АЛМАЗ ЗА РЕКЛАМУ</div>
-            <div class="menu-item" onclick="resetCharacter()">🔄 СБРОС (1 💎)</div>
-        </div>
-    </div>
-
-    <!-- ЭКРАН 3: БИТВА -->
-    <div id="scr-battle" class="screen">
-        <h2 style="color:var(--hp)">ОРОЧИМАРУ</h2>
-        <div class="hp-bar"><div id="b-hp-fill" class="hp-fill" style="width:100%"></div></div>
-        <p id="log">Твой ход!</p>
-        <button class="btn-action" onclick="playerHit()">УДАРИТЬ</button>
-        <p style="margin-top:20px; color:#666" onclick="show('scr-menu')">Сбежать</p>
-    </div>
+    
+    <button onclick="reset()" style="margin-top: 50px; opacity: 0.3; background: none; border: none; color: white;">Сброс (бесплатно для теста)</button>
 
     <script>
-        // БЕЗОПАСНАЯ ИНИЦИАЛИЗАЦИЯ
-        var p = { name: "Шиноби", hp: 100, maxHp: 100, gold: 50, dia: 0, dmg: 20 };
-        var b = { hp: 150, maxHp: 150, str: 15 };
-        var tg = null;
-
-        if (window.Telegram && window.Telegram.WebApp) {
-            tg = window.Telegram.WebApp;
-            tg.ready();
-            tg.expand();
+        let p = JSON.parse(localStorage.getItem('rpg_data'));
+        
+        // Если игрока нет — на создание
+        if (!p) { window.location.href = 'create.html'; }
+        else {
+            document.getElementById('m-name').innerText = "Герой: " + p.name;
+            document.getElementById('m-gold').innerText = p.gold;
+            document.getElementById('m-dia').innerText = p.dia;
         }
 
-        function updateUI() {
-            document.getElementById('h-hp').innerText = p.hp;
-            document.getElementById('h-gold').innerText = p.gold;
-            document.getElementById('h-dia').innerText = p.dia;
-            if(document.getElementById('m-name')) document.getElementById('m-name').innerText = p.name;
-        }
-
-        function show(id) {
-            var screens = document.getElementsByClassName('screen');
-            for(var i=0; i<screens.length; i++) screens[i].classList.remove('active');
-            document.getElementById(id).classList.add('active');
-            updateUI();
-        }
-
-        function finishCreate() {
-            var val = document.getElementById('in-name').value.trim();
-            p.name = val || "Шиноби";
-            save();
-            show('scr-menu');
-        }
-
-        function getFreeDiamond() {
-            if(tg) tg.HapticFeedback.impactOccurred('medium');
-            alert("Реклама просмотрена! +1 💎");
-            p.dia += 1;
-            save();
-            updateUI();
-        }
-
-        function resetCharacter() {
-            if(p.dia >= 1) {
-                if(confirm("Сбросить за 1 алмаз?")) {
-                    p.dia -= 1;
-                    localStorage.removeItem('rpg_v5');
-                    location.reload();
-                }
-            } else {
-                alert("Нужен 1 алмаз!");
-            }
-        }
-
-        function startBattle() {
-            b.hp = b.maxHp;
-            show('scr-battle');
-            document.getElementById('b-hp-fill').style.width = "100%";
-        }
-
-        function playerHit() {
-            var dmg = Math.floor(p.dmg * (0.5 + Math.random()));
-            b.hp = Math.max(0, b.hp - dmg);
-            document.getElementById('log').innerText = "Ты нанес " + dmg + " урона!";
-            document.getElementById('b-hp-fill').style.width = (b.hp / b.maxHp * 100) + "%";
-
-            if(b.hp <= 0) {
-                alert("ПОБЕДА!");
-                p.gold += 50; save(); show('scr-menu');
-            } else {
-                setTimeout(bossHit, 600);
-            }
-        }
-
-        function bossHit() {
-            var bDmg = b.str + Math.floor(Math.random() * 5);
-            p.hp = Math.max(0, p.hp - bDmg);
-            document.getElementById('log').innerText = "Босс ударил: -" + bDmg + " HP";
-            updateUI();
-            if(p.hp <= 0) {
-                alert("ТЫ ПАЛ...");
-                p.hp = p.maxHp; save(); show('scr-menu');
-            }
-        }
-
-        function save() { localStorage.setItem('rpg_v5', JSON.stringify(p)); }
-
-        // ЗАПУСК БЕЗ window.onload (быстрее)
-        var saved = localStorage.getItem('rpg_v5');
-        if(saved) {
-            p = JSON.parse(saved);
-            show('scr-menu');
-        } else {
-            show('scr-create');
-        }
+        function reset() { localStorage.clear(); location.reload(); }
     </script>
 </body>
 </html>

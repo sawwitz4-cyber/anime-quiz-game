@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { background: #0d0d12; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        .class-btn { display: block; background: #1a1a24; border: 1px solid #444; color: #f4e4bc; padding: 15px; margin: 10px auto; width: 85%; border-radius: 10px; cursor: pointer; }
+        .selected { border-color: #d4af37; background: #2b1d0e; }
+        input { background: #222; border: 1px solid #d4af37; color: white; padding: 15px; width: 80%; border-radius: 10px; margin: 20px 0; }
+        .start-btn { background: #d4af37; color: black; border: none; padding: 15px 40px; border-radius: 10px; font-weight: bold; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h2>КТО ТЫ, ПУТНИК?</h2>
+    <input type="text" id="name" placeholder="Твое имя...">
+    
+    <div id="classes">
+        <div class="class-btn" id="paladin" onclick="sel('paladin', 150, 15, 6, '🛡️ Паладин')">🛡️ ПАЛАДИН (HP: 150 | Урон: 15)</div>
+        <div class="class-btn" id="mage" onclick="sel('mage', 80, 35, 10, '🔮 Маг')">🔮 МАГ (HP: 80 | Урон: 35)</div>
+        <div class="class-btn" id="assassin" onclick="sel('assassin', 100, 25, 15, '🗡️ Убийца')">🗡️ УБИЙЦА (HP: 100 | Урон: 25)</div>
+    </div>
+
+    <button class="start-btn" onclick="finish()">НАЧАТЬ ПУТЬ</button>
+
+    <script>
+        let choice = null;
+        function sel(id, hp, dmg, spd, title) {
+            choice = { id, hp, dmg, spd, title };
+            document.querySelectorAll('.class-btn').forEach(b => b.classList.remove('selected'));
+            document.getElementById(id).classList.add('selected');
+        }
+
+        function finish() {
+            let n = document.getElementById('name').value || "Шиноби";
+            if(!choice) return alert("Выбери класс!");
+            let data = { 
+                name: n, classTitle: choice.title, classId: choice.id,
+                gold: 100, hp: choice.hp, maxHp: choice.hp, 
+                dmg: choice.dmg, spd: choice.spd, inv: [] 
+            };
+            localStorage.setItem('rpg_data', JSON.stringify(data));
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
