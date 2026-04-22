@@ -5,95 +5,117 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org"></script>
     <style>
-        body { background: #0f0f1a; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 0; overflow-x: hidden; }
-        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; align-items: center; }
-        .active { display: flex; }
+        :root { --neon: #00ffcc; --bg: #0a0a12; --panel: rgba(255, 255, 255, 0.05); }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; overflow: hidden; }
         
-        h1 { color: #00ffcc; text-shadow: 0 0 10px #00ffcc; }
-        .btn { background: #1a1a2e; border: 1px solid #34495e; color: white; padding: 15px 30px; border-radius: 12px; margin: 10px; width: 80%; font-size: 18px; font-weight: bold; cursor: pointer; }
-        .btn-main { background: linear-gradient(45deg, #00ffcc, #0099ff); color: #0f0f1a; border: none; }
+        /* Анимации */
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
         
-        /* Stats Bar */
-        .stats-bar { background: #16213e; padding: 10px; width: 100%; display: flex; justify-content: space-around; font-size: 14px; border-bottom: 1px solid #34495e; }
+        .screen { display: none; padding: 20px; height: 100vh; flex-direction: column; box-sizing: border-box; }
+        .active { display: flex; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Шапка со статами */
+        .header { background: var(--panel); border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .xp-bar { width: 100%; height: 6px; background: #222; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+        .xp-fill { height: 100%; background: var(--neon); width: 40%; transition: 0.5s; }
+
+        /* Аватар героя */
+        .hero-container { position: relative; margin: 20px 0; }
+        .hero-img { width: 180px; height: 180px; border-radius: 50%; border: 4px solid var(--neon); 
+                    box-shadow: 0 0 20px var(--neon); animation: float 3s ease-in-out infinite; }
+        .element-badge { position: absolute; bottom: 10px; right: 20%; background: #1a1a2e; padding: 5px 10px; border-radius: 10px; border: 1px solid var(--neon); }
+
+        /* Кнопки меню */
+        .menu-btns { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        .btn { background: var(--panel); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 18px; 
+               border-radius: 15px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; 
+               text-align: left; display: flex; align-items: center; justify-content: space-between; }
+        .btn:active { transform: scale(0.98); background: rgba(255,255,255,0.1); border-color: var(--neon); }
+        .btn-battle { background: linear-gradient(90deg, #e94560, #ff2e63); border: none; color: white; }
         
-        /* Battle elements */
-        #question { background: #16213e; padding: 15px; border-radius: 15px; border: 1px solid #00ffcc; margin: 20px 0; width: 100%; box-sizing: border-box; }
-        #slots { display: flex; justify-content: center; gap: 5px; margin-bottom: 20px; flex-wrap: wrap; }
-        .slot { width: 30px; height: 35px; border-bottom: 2px solid #00ffcc; font-size: 22px; }
-        #letters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; }
-        
-        input { background: #1a1a2e; border: 1px solid #00ffcc; color: white; padding: 15px; border-radius: 10px; width: 80%; margin-bottom: 20px; font-size: 18px; }
+        /* Сетка букв в бою */
+        #letters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px; }
+        .letter { background: #16213e; border-radius: 10px; padding: 15px 0; border: 1px solid #00d9ff; font-size: 20px; font-weight: bold; }
+
+        input { background: #1a1a2e; border: 1px solid var(--neon); color: white; padding: 15px; border-radius: 12px; width: 80%; margin: 20px 0; }
     </style>
 </head>
 <body>
 
-    <!-- 1. ЭКРАН СОЗДАНИЯ ПЕРСОНАЖА -->
+    <!-- ЭКРАН СОЗДАНИЯ -->
     <div id="screen-create" class="screen">
-        <h1>НОВЫЙ ГЕРОЙ</h1>
-        <p>Как тебя зовут, шиноби?</p>
-        <input type="text" id="p-name-input" placeholder="Твое имя...">
-        <p>Выбери стихию:</p>
-        <button class="btn" onclick="setElement('🔥 Огонь')">🔥 Огонь</button>
-        <button class="btn" onclick="setElement('💧 Вода')">💧 Вода</button>
-        <button class="btn" onclick="saveCharacter()" id="start-btn" style="display:none;" class="btn btn-main">НАЧАТЬ ПУТЬ</button>
-    </div>
-
-    <!-- 2. ГЛАВНОЕ МЕНЮ -->
-    <div id="screen-menu" class="screen">
-        <div class="stats-bar">
-            <span>👤 <b id="stat-name">---</b></span>
-            <span>⭐ LVL: <b id="stat-lvl">1</b></span>
-            <span>💰 ЗОЛОТО: <b id="stat-gold">0</b></span>
+        <h1 style="color: var(--neon)">НОВЫЙ ПУТЬ</h1>
+        <input type="text" id="p-name-input" placeholder="Имя ниндзя...">
+        <div class="menu-btns">
+            <button class="btn" onclick="setElement('🔥 Огонь', 'https://icons8.com')">🔥 Стихия Огня</button>
+            <button class="btn" onclick="setElement('💧 Вода', 'https://icons8.com')">💧 Стихия Воды</button>
+            <button class="btn-battle btn" onclick="saveCharacter()" id="start-btn" style="display:none; text-align: center; justify-content: center;">ПРОБУДИТЬ СИЛУ</button>
         </div>
-        <h1>МЕНЮ</h1>
-        <button class="btn btn-main" onclick="showScreen('screen-battle'); initBattle();">🔥 ВСТУПИТЬ В БОЙ</button>
-        <button class="btn" onclick="showScreen('screen-inv')">🎒 ИНВЕНТАРЬ</button>
-        <button class="btn" style="background: gold; color: black;" onclick="buyGold()">⭐️ КУПИТЬ ЗОЛОТО (1 ★)</button>
     </div>
 
-    <!-- 3. ЭКРАН БИТВЫ -->
+    <!-- ГЛАВНОЕ МЕНЮ -->
+    <div id="screen-menu" class="screen">
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span id="stat-name" style="font-weight: bold; font-size: 18px;">---</span>
+                <span style="color: gold;">💰 <b id="stat-gold">0</b></span>
+            </div>
+            <div style="font-size: 12px; color: #888; margin-top: 5px;">Уровень <span id="stat-lvl">1</span></div>
+            <div class="xp-bar"><div id="xp-fill" class="xp-fill"></div></div>
+        </div>
+
+        <div class="hero-container">
+            <img id="hero-avatar" src="" class="hero-img">
+            <div id="stat-el" class="element-badge">---</div>
+        </div>
+
+        <div class="menu-btns">
+            <button class="btn btn-battle" onclick="showScreen('screen-battle'); initBattle();">
+                <span>⚔️ ВСТУПИТЬ В БОЙ</span> <span>▶</span>
+            </button>
+            <button class="btn" onclick="showScreen('screen-inv')">
+                <span>🎒 ИНВЕНТАРЬ</span> <span>📦</span>
+            </button>
+            <button class="btn" onclick="buyGold()" style="border-color: gold;">
+                <span style="color: gold;">💎 КУПИТЬ ЗОЛОТО</span> <span>★ 1</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН БИТВЫ (упрощенно для примера) -->
     <div id="screen-battle" class="screen">
-        <div style="color:#ff4d4d; font-weight:bold;">БОСС HP: <span id="boss-hp">100</span></div>
-        <div id="question">ЗАГРУЗКА...</div>
-        <div id="slots"></div>
+        <h2 style="color: #e94560;">БОСС: <span id="boss-hp">100</span> HP</h2>
+        <div id="question" style="background: var(--panel); padding: 20px; border-radius: 15px; margin: 20px 0; border: 1px solid var(--neon);">...</div>
+        <div id="slots" style="display: flex; gap: 8px; justify-content: center; min-height: 40px; margin-bottom: 30px;"></div>
         <div id="letters"></div>
-        <button class="btn" onclick="showScreen('screen-menu')">🏳️ СБЕЖАТЬ</button>
-    </div>
-
-    <!-- 4. ИНВЕНТАРЬ -->
-    <div id="screen-inv" class="screen">
-        <h1>ИНВЕНТАРЬ</h1>
-        <div id="inv-list">У тебя пока пусто...</div>
-        <button class="btn" onclick="showScreen('screen-menu')">НАЗАД</button>
+        <button class="btn" onclick="showScreen('screen-menu')" style="margin-top: auto;">🏳️ СБЕЖАТЬ</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        let player = { name: "", element: "", lvl: 1, gold: 50, inv: [] };
-        let questions = [
-            {q: "Имя девятихвостого лиса?", a: "КУРАМА"},
-            {q: "Кто носит соломенную шляпу?", a: "ЛУФФИ"},
-            {q: "Бог смерти с яблоками?", a: "РЮК"}
-        ];
-        let curQ = 0, currentInput = "", bHP = 100;
+        let player = { name: "", element: "", avatar: "", lvl: 1, gold: 100, xp: 40 };
+        const questions = [{q: "Меч Саске с молнией?", a: "КУСАНАГИ"}, {q: "Учитель Наруто?", a: "КАКАШИ"}];
+        let curInput = "", bHP = 100;
 
-        // --- ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ЭКРАНОВ ---
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             updateUI();
         }
 
-        function setElement(el) {
+        function setElement(el, img) {
             player.element = el;
-            document.getElementById('start-btn').style.display = 'block';
+            player.avatar = img;
+            document.getElementById('start-btn').style.display = 'flex';
         }
 
         function saveCharacter() {
-            player.name = document.getElementById('p-name-input').value || "Герой";
-            localStorage.setItem('anime_rpg_user', JSON.stringify(player));
+            player.name = document.getElementById('p-name-input').value || "Шиноби";
+            localStorage.setItem('anime_rpg_v2', JSON.stringify(player));
             showScreen('screen-menu');
         }
 
@@ -101,76 +123,49 @@
             document.getElementById('stat-name').innerText = player.name;
             document.getElementById('stat-gold').innerText = player.gold;
             document.getElementById('stat-lvl').innerText = player.lvl;
+            document.getElementById('stat-el').innerText = player.element;
+            document.getElementById('hero-avatar').src = player.avatar || 'https://icons8.com';
+            document.getElementById('xp-fill').style.width = player.xp + "%";
         }
 
-        // --- БИТВА ---
         function initBattle() {
             bHP = 100;
             document.getElementById('boss-hp').innerText = bHP;
-            renderQuestion();
+            renderQ();
         }
 
-        function renderQuestion() {
-            const q = questions[curQ];
+        function renderQ() {
+            const q = questions[Math.floor(Math.random()*questions.length)];
             document.getElementById('question').innerText = q.q;
-            currentInput = "";
+            curInput = "";
             const slots = document.getElementById('slots');
-            slots.innerHTML = "";
-            for(let i=0; i<q.a.length; i++) slots.innerHTML += `<div class="slot" id="s${i}"></div>`;
+            slots.innerHTML = q.a.split('').map(() => `<div style="width:30px; height:35px; border-bottom:2px solid var(--neon); font-size:24px;"></div>`).join('');
             
             const grid = document.getElementById('letters');
             grid.innerHTML = "";
-            let chars = (q.a + "АБВГДЕЗ").split('').sort(() => Math.random() - 0.5);
-            chars.forEach(c => {
-                let btn = document.createElement('button');
-                btn.className = 'btn';
-                btn.style.width = "auto"; btn.style.padding = "10px";
-                btn.innerText = c;
-                btn.onclick = () => {
-                    if(currentInput.length < q.a.length) {
-                        document.getElementById('s'+currentInput.length).innerText = c;
-                        currentInput += c;
-                        btn.style.visibility = "hidden";
-                        if(currentInput.length == q.a.length) checkAnswer();
+            (q.a + "АБВГ").split('').sort(() => Math.random()-0.5).forEach(c => {
+                let b = document.createElement('button');
+                b.className = 'btn letter';
+                b.innerText = c;
+                b.onclick = () => {
+                    let s = slots.children[curInput.length];
+                    if(s) { s.innerText = c; curInput += c; b.style.opacity = '0.2'; b.disabled = true; }
+                    if(curInput === q.a) { 
+                        player.gold += 50; 
+                        tg.HapticFeedback.notificationOccurred('success');
+                        alert("БОСС ПОВЕРЖЕН!"); 
+                        showScreen('screen-menu'); 
                     }
                 };
-                grid.appendChild(btn);
+                grid.appendChild(b);
             });
         }
 
-        function checkAnswer() {
-            if(currentInput == questions[curQ].a) {
-                bHP -= 50;
-                document.getElementById('boss-hp').innerText = bHP;
-                if(bHP <= 0) {
-                    player.gold += 20;
-                    player.lvl += 1;
-                    localStorage.setItem('anime_rpg_user', JSON.stringify(player));
-                    alert("ПОБЕДА! +20 золота");
-                    showScreen('screen-menu');
-                } else {
-                    curQ = (curQ + 1) % questions.length;
-                    renderQuestion();
-                }
-            } else {
-                tg.HapticFeedback.notificationOccurred('error');
-                alert("СТАН! 2 СЕК");
-                setTimeout(renderQuestion, 2000);
-            }
-        }
+        function buyGold() { tg.sendData(JSON.stringify({action: "buy"})); }
 
-        function buyGold() {
-            tg.sendData(JSON.stringify({action: "buy_stars"}));
-        }
-
-        // --- ЗАГРУЗКА ---
-        const saved = localStorage.getItem('anime_rpg_user');
-        if(saved) {
-            player = JSON.parse(saved);
-            showScreen('screen-menu');
-        } else {
-            showScreen('screen-create');
-        }
+        const saved = localStorage.getItem('anime_rpg_v2');
+        if(saved) { player = JSON.parse(saved); showScreen('screen-menu'); } 
+        else { showScreen('screen-create'); }
     </script>
 </body>
 </html>
