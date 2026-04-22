@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Path of Shinobi - Tavern</title>
+    <title>Path of Shinobi - Tavern & Chat</title>
     
-    <!-- SDK Telegram -->
+    <!-- 1. ПРАВИЛЬНЫЕ ССЫЛКИ НА СКРИПТЫ (Без ошибок MIME) -->
     <script src="https://telegram.org"></script>
-    
-    <!-- SDK Firebase (Compat-версии для обхода CORS) -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
 
@@ -17,15 +15,13 @@
         body { 
             background: var(--bg); color: #f4e4bc; font-family: 'Segoe UI', sans-serif; 
             margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh;
-            opacity: 0; transition: opacity 0.3s; overflow-x: hidden;
+            opacity: 1; overflow-x: hidden;
         }
         .top-info { width: 100%; padding: 20px; background: linear-gradient(180deg, rgba(212, 175, 55, 0.1) 0%, rgba(0,0,0,0) 100%); text-align: center; box-sizing: border-box; }
         .record-badge { display: inline-block; border: 1px solid var(--gold); padding: 5px 15px; border-radius: 20px; font-size: 11px; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
-        
         .profile-card { background: var(--card); border: 2px solid var(--gold); border-radius: 25px; padding: 20px; width: 85%; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); box-sizing: border-box; }
         h1 { margin: 0; font-size: 24px; letter-spacing: 1px; color: white; }
         .class-tag { color: var(--accent); font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; display: block; }
-        
         .stat-row { display: flex; justify-content: space-between; margin: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 3px; font-size: 14px; }
         
         .main-btn { 
@@ -39,28 +35,26 @@
 
         /* ЧАТ */
         .chat-box { width: 85%; background: var(--card); border: 1px solid #333; border-radius: 20px; padding: 15px; box-sizing: border-box; margin-bottom: 20px; }
-        .chat-messages { height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; padding-right: 5px; text-align: left; }
-        .msg { font-size: 12px; line-height: 1.4; background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 10px; }
+        .chat-messages { height: 130px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; text-align: left; }
+        .msg { font-size: 12px; background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 10px; }
         .msg b { color: var(--gold); }
         .chat-input-area { display: flex; gap: 8px; }
         .chat-input { flex: 1; background: #000; border: 1px solid #444; color: white; padding: 10px; border-radius: 10px; font-size: 13px; outline: none; }
         .chat-send { background: var(--gold); border: none; padding: 0 15px; border-radius: 10px; font-weight: bold; cursor: pointer; color: #000; }
-
-        .reset-link { padding: 20px; color: #444; font-size: 10px; text-transform: uppercase; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div class="top-info">
         <div class="record-badge">Рекорд: <span id="max-floor">1</span> этаж</div>
-        <h1 id="hero-name">. . .</h1>
+        <h1 id="hero-name">Шиноби</h1>
         <span class="class-tag" id="hero-class">---</span>
     </div>
 
     <div class="profile-card">
         <div class="stat-row"><span>💰 Золото:</span> <b id="hero-gold">0</b></div>
-        <div class="stat-row"><span>⚡ Энергия:</span> <b id="hero-nrg" style="color:var(--accent)">0/10</b></div>
-        <div class="stat-row"><span>❤️ Здоровье:</span> <b id="hero-hp">0/0</b></div>
+        <div class="stat-row"><span>⚡ Энергия:</span> <b id="hero-nrg">0/10</b></div>
+        <div class="stat-row"><span>❤️ HP:</span> <b id="hero-hp">0/0</b></div>
     </div>
 
     <a href="map.html" class="main-btn">В ПУТЬ 🗺️</a>
@@ -71,62 +65,41 @@
     </div>
 
     <div class="chat-box">
-        <div class="chat-messages" id="chat-msgs"></div>
+        <div id="chat-msgs" class="chat-messages"></div>
         <div class="chat-input-area">
-            <input type="text" id="chat-in" class="chat-input" placeholder="Сообщение...">
-            <button class="chat-send" onclick="window.sendMsg()">></button>
+            <input type="text" id="chat-in" class="chat-input" placeholder="Написать...">
+            <button class="chat-send" onclick="sendMsg()">></button>
         </div>
     </div>
 
-    <div class="reset-link" onclick="resetGame()">Сбросить прогресс</div>
-
     <script>
-        // --- 1. ЛОГИКА ИГРЫ ---
-        const tg = window.Telegram ? window.Telegram.WebApp : null;
-        if(tg) { tg.ready(); tg.expand(); }
-
+        // 2. ЛОГИКА ИГРЫ И РЕГЕНЕРАЦИИ
         let p = JSON.parse(localStorage.getItem('rpg_data')) || {};
 
-        function save() { localStorage.setItem('rpg_data', JSON.stringify(p)); }
-
         function initGame() {
-            if (!p.name) {
-                window.location.replace('create.html');
-                return;
-            }
+            if (!p.name) { window.location.replace('create.html'); return; }
 
             const now = Date.now();
             const lastTime = p.lastUpdate || now;
             const diffMs = now - lastTime;
             
-            // Регенерация HP (+10/мин)
-            if (p.hp < p.maxHp) {
-                p.hp = Math.min(p.maxHp, p.hp + (diffMs / 60000 * 10));
-            }
-            // Регенерация Энергии (+1/10мин)
+            // Реген (10 HP/мин, 1 Энергия/10мин)
+            if (p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + (diffMs / 60000 * 10));
             if (p.energy === undefined) p.energy = 10;
-            if (p.energy < 10) {
-                p.energy = Math.min(10, p.energy + (diffMs / 600000));
-            }
+            if (p.energy < 10) p.energy = Math.min(10, p.energy + (diffMs / 600000));
 
             p.lastUpdate = now;
-            save();
+            localStorage.setItem('rpg_data', JSON.stringify(p));
 
             document.getElementById('hero-name').innerText = p.name;
-            document.getElementById('hero-class').innerText = p.classTitle || 'Шиноби';
+            document.getElementById('hero-class').innerText = p.classTitle || 'Герой';
             document.getElementById('hero-gold').innerText = Math.floor(p.gold);
             document.getElementById('hero-hp').innerText = Math.floor(p.hp) + '/' + (p.maxHp || 100);
             document.getElementById('hero-nrg').innerText = Math.floor(p.energy) + '/10';
             document.getElementById('max-floor').innerText = p.maxFloorReached || 1;
-
-            document.body.style.opacity = '1';
         }
 
-        function resetGame() {
-            if (confirm("Удалить всё?")) { localStorage.clear(); window.location.replace('create.html'); }
-        }
-
-        // --- 2. ЛОГИКА FIREBASE (ЧАТ) ---
+        // 3. ЛОГИКА FIREBASE (ЧАТ)
         const firebaseConfig = {
             apiKey: "AIzaSyAJb95SkErdQh-kNgnA1h4uiPe6a6wUuog",
             authDomain: "://firebaseapp.com",
@@ -137,44 +110,35 @@
             appId: "1:150871531506:web:5ad10630596790dc95d56b"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const chatRef = db.ref('messages');
+        // Ждем загрузки библиотек, прежде чем инициализировать
+        window.onload = function() {
+            if (typeof firebase !== 'undefined') {
+                firebase.initializeApp(firebaseConfig);
+                const chatRef = firebase.database().ref('messages');
 
-        // Глобальная функция отправки
-        window.sendMsg = function() {
-            const input = document.getElementById('chat-in');
-            const text = input.value.trim();
-            if (text !== "" && p.name) {
-                chatRef.push({
-                    user: p.name,
-                    text: text,
-                    timestamp: Date.now()
+                window.sendMsg = function() {
+                    const input = document.getElementById('chat-in');
+                    const text = input.value.trim();
+                    if (text && p.name) {
+                        chatRef.push({ user: p.name, text: text, timestamp: Date.now() });
+                        input.value = "";
+                    }
+                };
+
+                chatRef.limitToLast(20).on('value', (snap) => {
+                    const box = document.getElementById('chat-msgs');
+                    box.innerHTML = "";
+                    const data = snap.val();
+                    if (data) {
+                        Object.values(data).forEach(m => {
+                            box.innerHTML += `<div class="msg"><b>${m.user}:</b> ${m.text}</div>`;
+                        });
+                        box.scrollTop = box.scrollHeight;
+                    }
                 });
-                input.value = "";
             }
+            initGame();
         };
-
-        // Слушатель сообщений
-        chatRef.limitToLast(20).on('value', (snapshot) => {
-            const data = snapshot.val();
-            const box = document.getElementById('chat-msgs');
-            if (!box) return;
-            box.innerHTML = "";
-            if (data) {
-                Object.values(data).forEach(m => {
-                    const div = document.createElement('div');
-                    div.className = "msg";
-                    div.innerHTML = `<b>${m.user}:</b> ${m.text}`;
-                    box.appendChild(div);
-                });
-                box.scrollTop = box.scrollHeight;
-            }
-        });
-
-        // Запуск
-        initGame();
-        setInterval(initGame, 30000); // Обновление статов раз в 30 сек
     </script>
 </body>
 </html>
