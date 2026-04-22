@@ -2,106 +2,32 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org"></script>
+    <!-- Инструмент отладки (появится шестеренка внизу) -->
+    <script src="https://jsdelivr.net"></script>
+    <script>eruda.init();</script>
+    
     <style>
-        body { 
-            background-color: #0a0a12; 
-            color: white; 
-            font-family: sans-serif; 
-            margin: 0; 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-        }
-        
-        /* Заставка загрузки, которая видна СРАЗУ */
-        #loading { 
-            display: block; 
-            margin-top: 50px; 
-            color: #00ffcc; 
-        }
-
-        /* Экраны скрыты, пока JS не скажет иначе */
-        .screen { display: none; width: 100%; flex-direction: column; align-items: center; }
-        
-        .btn { 
-            background: #16213e; 
-            border: 1px solid #00ffcc; 
-            color: white; 
-            padding: 15px; 
-            border-radius: 10px; 
-            width: 100%; 
-            margin: 10px 0; 
-            font-size: 18px; 
-            cursor: pointer;
-        }
-
-        input { 
-            background: #1a1a2e; 
-            border: 1px solid #00ffcc; 
-            color: white; 
-            padding: 15px; 
-            border-radius: 10px; 
-            width: 90%; 
-            margin-bottom: 20px; 
-        }
+        body { background: #000 !important; color: #0f0; font-family: monospace; padding: 20px; text-align: center; }
+        .test-btn { background: #222; color: #0f0; border: 1px solid #0f0; padding: 20px; width: 100%; margin-top: 50px; }
     </style>
 </head>
 <body>
-
-    <!-- Это видно пока грузится скрипт -->
-    <div id="loading">ЗАГРУЗКА ДАННЫХ...</div>
-
-    <!-- ЭКРАН СОЗДАНИЯ -->
-    <div id="screen-create" class="screen">
-        <h1 style="color: #00ffcc">НОВЫЙ ГЕРОЙ</h1>
-        <input type="text" id="p-name" placeholder="Твое имя...">
-        <button class="btn" onclick="saveHero()">СОЗДАТЬ ПЕРСОНАЖА</button>
-    </div>
-
-    <!-- ГЛАВНОЕ МЕНЮ -->
-    <div id="screen-menu" class="screen">
-        <h1 id="hero-name">---</h1>
-        <button class="btn" style="background: linear-gradient(45deg, #e94560, #ff2e63); border: none;" onclick="alert('Битва в разработке!')">⚔️ В БОЙ</button>
-        <button class="btn" onclick="clearData()">СБРОСИТЬ ПРОГРЕСС</button>
-    </div>
+    <h2 id="status">ПРОВЕРКА ЗАПУСКА...</h2>
+    <div id="debug-info"></div>
+    <button class="test-btn" onclick="location.reload(true)">ОБНОВИТЬ КЕШ (FORCE)</button>
 
     <script>
-        const tg = window.Telegram.WebApp;
-
-        // Функция переключения
-        function show(id) {
-            document.getElementById('loading').style.display = 'none';
-            document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
-            document.getElementById(id).style.display = 'flex';
-        }
-
-        function saveHero() {
-            const name = document.getElementById('p-name').value || "Шиноби";
-            localStorage.setItem('hero_data', name);
-            location.reload(); // Перезагружаем, чтобы сработала логика входа
-        }
-
-        function clearData() {
-            localStorage.removeItem('hero_data');
-            location.reload();
-        }
-
-        // Запуск при загрузке страницы
-        window.onload = () => {
+        try {
+            const tg = window.Telegram.WebApp;
             tg.ready();
             tg.expand();
-
-            const savedName = localStorage.getItem('hero_data');
-            if (savedName) {
-                document.getElementById('hero-name').innerText = "Привет, " + savedName;
-                show('screen-menu');
-            } else {
-                show('screen-create');
-            }
-        };
+            
+            document.getElementById('status').innerText = "ТЕЛЕГРАМ ПОДКЛЮЧЕН!";
+            document.getElementById('debug-info').innerHTML = "User: " + (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.first_name : "не найден");
+        } catch (e) {
+            document.getElementById('status').innerText = "ОШИБКА: " + e.message;
+        }
     </script>
 </body>
 </html>
