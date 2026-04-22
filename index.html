@@ -3,243 +3,236 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RPG HARDCORE</title>
+    <title>Anime RPG Mobile</title>
+    <!-- Telegram Web App SDK -->
     <script src="https://telegram.org"></script>
     <style>
-        :root { --gold: #d4af37; --bg: #0a0a0a; --hp: #ff3333; --mana: #0099ff; --orange: #ff6600; }
-        body { background: var(--bg); color: #f4e4bc; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; text-align: center; user-select: none; overflow: hidden; }
+        :root { --gold: #d4af37; --bg: #0d0d12; --card: #1a1a24; --accent: #00ffcc; --hp: #ff4d4d; --star: #ff9d00; }
+        body { background: var(--bg); color: #f4e4bc; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; overflow: hidden; user-select: none; }
         
-        /* Эффекты вспышек */
-        #flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; opacity: 0; transition: opacity 0.1s; }
-        
-        .screen { display: none; padding: 15px; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
+        /* Сетка экранов */
+        .screen { display: none; padding: 15px; flex-direction: column; align-items: center; height: 100vh; box-sizing: border-box; overflow-y: auto; }
         .active { display: flex !important; }
 
-        .stats-bar { display: flex; justify-content: space-around; background: #111; padding: 10px; border-bottom: 2px solid var(--gold); font-weight: bold; font-size: 12px; width: 100%; position: sticky; top: 0; z-index: 10; }
-        .container { padding-top: 20px; width: 100%; }
+        /* HEADER */
+        .header { background: #111; padding: 12px; border-bottom: 2px solid var(--gold); display: flex; justify-content: space-around; font-weight: bold; font-size: 13px; width: 100%; position: sticky; top: 0; z-index: 100; }
 
-        /* Карточка босса с анимацией огня */
-        .boss-card { background: #1a1a24; border: 2px solid #444; border-radius: 12px; padding: 15px; width: 90%; transition: 0.2s; position: relative; overflow: hidden; }
-        .boss-hit { border-color: var(--hp) !important; box-shadow: 0 0 20px var(--hp); transform: scale(0.98); }
-        .boss-fire { border-color: var(--orange) !important; box-shadow: 0 0 30px var(--orange); }
+        /* МЕНЮ ПЛИТКОЙ */
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; margin-top: 20px; }
+        .menu-item { background: var(--card); border: 1px solid #333; border-radius: 20px; padding: 25px 10px; text-align: center; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .menu-item:active { transform: scale(0.95); background: #252535; border-color: var(--gold); }
+        .menu-item b { display: block; margin-top: 10px; font-size: 16px; color: white; }
+        .icon { font-size: 32px; }
 
-        #dice { width: 70px; height: 70px; background: #600; color: white; display: flex; align-items: center; justify-content: center; margin: 15px auto; font-size: 28px; font-weight: bold; border-radius: 10px; border: 3px solid var(--gold); box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+        /* КАРТОЧКИ ТОВАРОВ */
+        .list-card { background: var(--card); border-radius: 15px; padding: 15px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #333; width: 100%; margin-bottom: 10px; box-sizing: border-box; }
+        .buy-btn { background: var(--gold); color: black; border: none; padding: 10px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .buy-btn:active { opacity: 0.7; }
+        .buy-star { background: var(--star); color: white; }
+
+        /* БОЙ */
+        #dice { width: 80px; height: 80px; background: #800; color: white; display: flex; align-items: center; justify-content: center; margin: 20px auto; font-size: 35px; font-weight: bold; border-radius: 15px; border: 2px solid var(--gold); box-shadow: 0 0 20px rgba(212,175,55,0.4); }
+        .hp-bar { width: 100%; height: 14px; background: #222; border-radius: 7px; overflow: hidden; border: 1px solid #444; margin: 15px 0; }
+        .hp-fill { height: 100%; width: 100%; transition: width 0.4s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
+        .btn-action { background: linear-gradient(180deg, #ff4d4d, #800); color: white; padding: 18px; width: 100%; border-radius: 15px; font-size: 18px; font-weight: bold; border: none; margin-top: 10px; cursor: pointer; text-transform: uppercase; }
+
+        .back-link { margin-top: 25px; color: #888; text-decoration: none; cursor: pointer; font-size: 14px; }
         
-        .btn { background: #222; border: 1px solid var(--gold); color: var(--gold); padding: 16px; width: 95%; border-radius: 10px; font-size: 14px; margin-bottom: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn:active { background: var(--gold); color: #000; }
-        
-        .bar { width: 100%; height: 12px; background: #222; border-radius: 6px; overflow: hidden; margin: 5px 0; border: 1px solid #444; }
-        .fill { height: 100%; transition: width 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
-        
-        .roll-anim { animation: shake 0.2s infinite; }
-        @keyframes shake { 0% {transform: translate(2px, 2px) rotate(0deg)} 50% {transform: translate(-2px, -2px) rotate(5deg)} 100% {transform: translate(2px, 2px) rotate(-5deg)} }
+        /* Анимации */
+        .roll { animation: shake 0.3s infinite; }
+        @keyframes shake { 0% {transform: rotate(3deg)} 50% {transform: rotate(-3deg)} 100% {transform: rotate(3deg)} }
     </style>
 </head>
 <body>
-    <div id="flash"></div>
 
-    <div class="stats-bar">
-        <span>LVL: <span id="st-lvl">1</span></span>
-        <span>❤️ <span id="st-hp">100</span></span>
-        <span>💰 <span id="st-gold">50</span></span>
+    <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
+    <div class="header">
+        <span>❤️ HP: <span id="h-hp">100</span></span>
+        <span>💰 <span id="h-gold">50</span></span>
+        <span>⭐ LVL: <span id="h-lvl">1</span></span>
     </div>
 
-    <!-- ВЫБОР КЛАССА -->
-    <div id="scr-class" class="screen active">
-        <div class="container">
-            <h2 style="color:var(--gold)">КТО ТЫ, СМЕРТНЫЙ?</h2>
-            <button class="btn" onclick="pickJob('paladin')">🛡️ ПАЛАДИН (Танк: 180 HP, Слабый урон)</button>
-            <button class="btn" onclick="pickJob('mage')">🔮 МАГ (Стеклянная пушка: 70 HP, Адский урон)</button>
-            <button class="btn" onclick="pickJob('assassin')">🗡️ УБИЙЦА (Ловкач: 100 HP, Криты)</button>
-        </div>
-    </div>
-
-    <!-- МЕНЮ -->
-    <div id="scr-menu" class="screen">
-        <div class="container">
-            <h3 id="hero-title" style="color:var(--gold)">---</h3>
-            <div class="boss-card" style="text-align: left; font-size: 14px; margin-left: 5%;">
-                💪 Сила: <b id="stat-str">0</b><br>
-                🛡️ Защита: <b id="stat-def">0</b><br>
-                ⚡ Скорость: <b id="stat-spd">0</b>
+    <!-- ЭКРАН 1: ГЛАВНОЕ МЕНЮ -->
+    <div id="scr-menu" class="screen active">
+        <div class="menu-grid">
+            <div class="menu-item" style="grid-column: span 2; background: linear-gradient(135deg, #a00, #400); border:none;" onclick="startBattle()">
+                <div class="icon">⚔️</div>
+                <b>ВСТУПИТЬ В БОЙ</b>
             </div>
-            <button class="btn" style="background:#800; color:white; margin-top:20px; border:none;" onclick="startBattle()">⚔️ ИДТИ НА СМЕРТЬ</button>
+            <div class="menu-item" onclick="show('scr-shop')">
+                <div class="icon">🛒</div>
+                <b>МАГАЗИН</b>
+            </div>
+            <div class="menu-item" onclick="show('scr-inv')">
+                <div class="icon">🎒</div>
+                <b>ИНВЕНТАРЬ</b>
+            </div>
+            <div class="menu-item" style="grid-column: span 2;" onclick="tg.openTelegramLink('https://t.me нашел крутую RPG в телеге!')">
+                <div class="icon">👥</div>
+                <b>ПОЗВАТЬ ДРУЗЕЙ</b>
+            </div>
         </div>
+        <div class="back-link" style="opacity: 0.3;" onclick="resetData()">Сбросить прогресс</div>
     </div>
 
-    <!-- БИТВА -->
+    <!-- ЭКРАН 2: БИТВА -->
     <div id="scr-battle" class="screen">
-        <div class="container">
-            <div id="boss-ui" class="boss-card" style="margin-left: 5%;">
-                <div style="display:flex; justify-content:space-between"><b>ОРОЧИМАРУ</b> <span id="b-hp-txt">300/300</span></div>
-                <div class="bar"><div id="b-hp-fill" class="fill" style="background:var(--hp); width:100%"></div></div>
-                <div id="b-talk" style="font-size:11px; color:#888;">"Ты пахнешь страхом..."</div>
+        <h2 style="color:var(--hp); margin-bottom: 5px;">ОРОЧИМАРУ</h2>
+        <div class="hp-bar"><div id="b-hp-fill" class="hp-fill" style="background:var(--hp); width:100%"></div></div>
+        
+        <div id="dice">d20</div>
+        <p id="log" style="font-weight: bold;">Ваш ход!</p>
+        
+        <button class="btn-action" id="hit-btn" onclick="playerHit()">УДАРИТЬ</button>
+        <div class="back-link" onclick="show('scr-menu')">🏳️ СБЕЖАТЬ</div>
+    </div>
+
+    <!-- ЭКРАН 3: МАГАЗИН -->
+    <div id="scr-shop" class="screen">
+        <h2 style="color:var(--gold)">ЛАВКА ТОРГОВЦА</h2>
+        <div id="shop-list" style="width:100%">
+            <div class="list-card">
+                <div><b>Катана Саске</b><br><small style="color: #0f0;">+15 к урону</small></div>
+                <button class="buy-btn" onclick="buy('Катана Саске', 120, 15, 0)">120 💰</button>
             </div>
-
-            <div id="dice">d20</div>
-            <div id="battle-log" style="font-size:14px; font-weight:bold; min-height:40px; margin: 10px 0;">Бросай на инициативу!</div>
-
-            <div id="p-hp-mana" style="font-size:12px;">❤️ 100 | 💧 0</div>
-            <div class="bar"><div id="p-hp-fill" class="fill" style="background:#00ffcc; width:100%"></div></div>
-            <div class="bar" style="height:6px; border:none;"><div id="p-mana-fill" class="fill" style="background:var(--mana); width:0%"></div></div>
-
-            <div style="margin-top:15px; width:100%;">
-                <button id="btn-init" class="btn" onclick="rollInitiative()">🎲 КИНУТЬ КУБИК</button>
-                <button id="btn-hit" class="btn" style="display:none;" onclick="playerHit()">⚔️ АТАКОВАТЬ</button>
-                <button id="btn-skill" class="btn" style="display:none; background:#d30; color:white; border:none;" onclick="useSkill()">🔥 СПОСОБНОСТЬ</button>
+            <div class="list-card">
+                <div><b>Жилет Чунина</b><br><small style="color: #0f0;">+40 к макс. HP</small></div>
+                <button class="buy-btn" onclick="buy('Жилет Чунина', 150, 0, 40)">150 💰</button>
+            </div>
+            <div class="list-card" style="border-color: var(--star);">
+                <div><b style="color:var(--star)">1000 ЗОЛОТА</b><br><small>Мгновенное пополнение</small></div>
+                <button class="buy-btn buy-star" onclick="donate()">1 ★</button>
             </div>
         </div>
+        <div class="back-link" onclick="show('scr-menu')">← Назад в меню</div>
+    </div>
+
+    <!-- ЭКРАН 4: ИНВЕНТАРЬ -->
+    <div id="scr-inv" class="screen">
+        <h2 style="color:var(--accent)">ВАША СУМКА</h2>
+        <div id="inventory-items" style="width:100%"></div>
+        <div class="back-link" onclick="show('scr-menu')">← Назад в меню</div>
     </div>
 
     <script>
-        var p = { lvl:1, gold:50, hp:100, maxHp:100, str:15, def:10, spd:10, mana:0, maxMana:50, job:'' };
-        var b = { hp:350, maxHp:350, str:28, spd:12 }; // БОСС СТАЛ СИЛЬНЕЕ
-        
-        function show(id) {
-            var sc = document.getElementsByClassName('screen');
-            for(var i=0; i<sc.length; i++) sc[i].classList.remove('active');
-            document.getElementById(id).classList.add('active');
+        const tg = window.Telegram.WebApp;
+        tg.ready(); tg.expand();
+
+        // Загрузка данных или дефолтные значения
+        let p = JSON.parse(localStorage.getItem('rpg_save')) || { 
+            hp: 100, maxHp: 100, gold: 50, lvl: 1, dmg: 20, inv: [] 
+        };
+
+        let b = { hp: 200, maxHp: 200, str: 15 };
+
+        function save() {
+            localStorage.setItem('rpg_save', JSON.stringify(p));
         }
 
-        function pickJob(job) {
-            p.job = job;
-            if(job === 'paladin') { p.maxHp=180; p.str=15; p.def=20; p.spd=6; p.skillName="СВЯТОЙ ЩИТ"; }
-            if(job === 'mage') { p.maxHp=70; p.str=45; p.def=5; p.spd=10; p.skillName="ОГНЕННЫЙ ШАР"; }
-            if(job === 'assassin') { p.maxHp=100; p.str=25; p.def=8; p.spd=16; p.skillName="ЯДОВИТЫЙ КЛИНОК"; }
-            p.hp = p.maxHp;
-            document.getElementById('hero-title').innerText = job.toUpperCase();
-            updateUI(); show('scr-menu');
+        function show(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            updateUI();
         }
 
         function updateUI() {
-            document.getElementById('st-hp').innerText = p.hp;
-            document.getElementById('st-gold').innerText = p.gold;
-            document.getElementById('stat-str').innerText = p.str;
-            document.getElementById('stat-def').innerText = p.def;
-            document.getElementById('stat-spd').innerText = p.spd;
+            document.getElementById('h-hp').innerText = p.hp;
+            document.getElementById('h-gold').innerText = p.gold;
+            document.getElementById('h-lvl').innerText = p.lvl;
+            
+            const invBox = document.getElementById('inventory-items');
+            invBox.innerHTML = p.inv.length ? p.inv.map(i => `<div class="list-card"><b>${i}</b></div>`).join('') : "<p style='color:#666'>Здесь пока пусто...</p>";
         }
 
         function startBattle() {
-            b.hp = 350; p.hp = p.maxHp; p.mana = 0;
-            updateBattleUI(); resetBtns(); show('scr-battle');
-        }
-
-        function resetBtns() {
-            document.getElementById('btn-init').style.display = 'block';
-            document.getElementById('btn-hit').style.display = 'none';
-            document.getElementById('btn-skill').style.display = 'none';
-            document.getElementById('dice').innerText = "d20";
-        }
-
-        function rollInitiative() {
-            var d = document.getElementById('dice');
-            d.classList.add('roll-anim');
-            setTimeout(function(){
-                d.classList.remove('roll-anim');
-                var pr = Math.floor(Math.random()*20)+1;
-                var br = Math.floor(Math.random()*20)+1;
-                d.innerText = pr;
-                if((pr + p.spd) >= (br + b.spd)) {
-                    document.getElementById('battle-log').innerText = "ТВОЙ ХОД!";
-                    document.getElementById('btn-init').style.display = 'none';
-                    document.getElementById('btn-hit').style.display = 'block';
-                    document.getElementById('btn-skill').style.display = 'block';
-                    document.getElementById('btn-skill').disabled = (p.mana < 25);
-                } else {
-                    document.getElementById('battle-log').innerText = "БОСС БЫСТРЕЕ!";
-                    setTimeout(bossHit, 800);
-                }
-            }, 500);
+            b.hp = b.maxHp;
+            p.hp = p.maxHp;
+            show('scr-battle');
+            document.getElementById('log').innerText = "Ваш ход!";
+            document.getElementById('hit-btn').disabled = false;
+            updateBattleUI();
         }
 
         function playerHit() {
-            var d = document.getElementById('dice');
-            d.classList.add('roll-anim');
-            setTimeout(function(){
-                d.classList.remove('roll-anim');
-                var r = Math.floor(Math.random()*20)+1;
-                d.innerText = r;
-                var dmg = 0;
-                var log = "";
+            const die = document.getElementById('dice');
+            const btn = document.getElementById('hit-btn');
+            die.classList.add('roll');
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                die.classList.remove('roll');
+                let roll = Math.floor(Math.random() * 20) + 1;
+                die.innerText = roll;
+                
+                let damage = Math.floor(p.dmg * (roll/10));
+                if(roll === 20) { damage *= 2; tg.HapticFeedback.notificationOccurred('success'); }
+                if(roll < 5) damage = 0;
+                
+                b.hp = Math.max(0, b.hp - damage);
+                document.getElementById('log').innerText = damage > 0 ? `Вы нанесли ${damage} урона!` : "ПРОМАХ!";
+                updateBattleUI();
 
-                if(r === 1) { 
-                    dmg = 10; p.hp -= dmg; log = "КРИТИЧЕСКИЙ ПРОВАЛ! Ты ранил себя на 10!";
-                } else if(r === 20) { 
-                    dmg = p.str * 2; b.hp -= dmg; log = "БОЖЕСТВЕННЫЙ КРИТ! " + dmg + " урона!";
-                    p.mana = Math.min(p.maxMana, p.mana + 20);
-                    effect('hit');
-                } else if(r >= 10) { 
-                    dmg = Math.floor(p.str * (r/15)); b.hp -= dmg; log = "Попадание! Нанесено " + dmg;
-                    p.mana = Math.min(p.maxMana, p.mana + 10);
-                    effect('hit');
+                if(b.hp <= 0) {
+                    tg.HapticFeedback.notificationOccurred('success');
+                    alert("ПОБЕДА! +60 золота");
+                    p.gold += 60; p.lvl++;
+                    save();
+                    show('scr-menu');
                 } else {
-                    log = "ПРОМАХ! Орочимару смеется.";
+                    setTimeout(bossHit, 1000);
                 }
-
-                document.getElementById('battle-log').innerText = log;
-                checkStatus();
-            }, 500);
-        }
-
-        function useSkill() {
-            p.mana -= 25;
-            var log = "";
-            if(p.job === 'mage') { 
-                b.hp -= 120; effect('fire'); log = "🔥 ОГНЕННЫЙ ШАР ИСПЕПЕЛЯЕТ! (120 урона)"; 
-            }
-            if(p.job === 'paladin') { 
-                p.hp = Math.min(p.maxHp, p.hp + 80); effect('heal'); log = "✨ ТЫ ИСЦЕЛЕН! (+80 HP)"; 
-            }
-            if(p.job === 'assassin') { 
-                b.hp -= 60; b.str -= 5; effect('poison'); log = "🐍 ТЫ ОТРАВИЛ ЕГО! (-60 HP и -5 силы)"; 
-            }
-            document.getElementById('battle-log').innerText = log;
-            checkStatus();
+            }, 600);
         }
 
         function bossHit() {
-            var br = Math.floor(Math.random()*20)+1;
-            var dmg = Math.max(10, b.str - Math.floor(p.def/2));
-            if(br >= 18) { dmg *= 1.5; document.getElementById('battle-log').innerText = "👹 КРИТ БОССА! " + dmg + " урона!"; }
-            else { document.getElementById('battle-log').innerText = "👹 Босс бьет на " + dmg; }
+            let dmg = b.str + Math.floor(Math.random() * 10);
+            p.hp = Math.max(0, p.hp - dmg);
+            document.getElementById('log').innerText = `Босс атакует: -${dmg} HP!`;
+            updateUI();
             
-            p.hp -= Math.floor(dmg);
-            effect('shake');
-            if(p.hp <= 0) { alert("ТЫ ПОГИБ. Орочимару забирает твою душу..."); location.reload(); }
-            else { updateBattleUI(); setTimeout(resetBtns, 1000); }
-        }
-
-        function effect(type) {
-            var f = document.getElementById('flash');
-            var bui = document.getElementById('boss-ui');
-            if(type === 'fire') { f.style.backgroundColor = 'orange'; f.style.opacity = '0.7'; bui.classList.add('boss-fire'); }
-            if(type === 'hit') { bui.classList.add('boss-hit'); }
-            if(type === 'heal') { f.style.backgroundColor = 'lime'; f.style.opacity = '0.5'; }
-            if(type === 'shake') { document.body.style.transform = 'translateX(5px)'; }
-            
-            setTimeout(function(){ 
-                f.style.opacity = '0'; 
-                bui.classList.remove('boss-fire', 'boss-hit');
-                document.body.style.transform = 'translateX(0)';
-            }, 200);
-        }
-
-        function checkStatus() {
-            updateBattleUI();
-            if(b.hp <= 0) {
-                alert("ПОБЕДА! Ты выжил... в этот раз.");
-                p.gold += 100; show('scr-menu');
-            } else { setTimeout(resetBtns, 1000); }
+            if(p.hp <= 0) {
+                tg.HapticFeedback.notificationOccurred('error');
+                alert("ВЫ ПОГИБЛИ. Орочимару победил...");
+                save();
+                show('scr-menu');
+            } else {
+                document.getElementById('hit-btn').disabled = false;
+            }
         }
 
         function updateBattleUI() {
-            document.getElementById('b-hp-txt').innerText = b.hp + "/350";
-            document.getElementById('b-hp-fill').style.width = Math.max(0, (b.hp/350*100)) + "%";
-            document.getElementById('p-hp-fill').style.width = (p.hp/p.maxHp*100) + "%";
-            document.getElementById('p-mana-fill').style.width = (p.mana/p.maxMana*100) + "%";
-            document.getElementById('p-hp-mana').innerText = "❤️ " + p.hp + " | 💧 " + p.mana;
-            updateUI();
+            document.getElementById('b-hp-fill').style.width = (b.hp/b.maxHp*100) + "%";
         }
+
+        function buy(name, price, addDmg, addHp) {
+            if(p.gold >= price) {
+                p.gold -= price;
+                p.inv.push(name);
+                p.dmg += addDmg;
+                p.maxHp += addHp;
+                p.hp = p.maxHp;
+                save();
+                alert("Предмет куплен: " + name);
+                updateUI();
+            } else {
+                alert("Недостаточно золота!");
+            }
+        }
+
+        function donate() {
+            tg.HapticFeedback.impactOccurred('medium');
+            tg.sendData(JSON.stringify({action: "donate", stars: 1}));
+        }
+
+        function resetData() {
+            if(confirm("Сбросить весь прогресс?")) {
+                localStorage.removeItem('rpg_save');
+                location.reload();
+            }
+        }
+
+        // Первый запуск
+        updateUI();
     </script>
 </body>
 </html>
