@@ -2,96 +2,83 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Battle</title>
     <script src="https://telegram.org"></script>
     <style>
-        body { background: #0a0a12; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
-        .boss-hp { color: #ff4d4d; font-size: 24px; font-weight: bold; margin-bottom: 20px; }
-        #question { background: #16213e; padding: 20px; border-radius: 15px; border: 1px solid #00ffcc; margin: 20px 0; font-size: 18px; }
-        #slots { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; min-height: 40px; }
-        .slot { width: 35px; height: 40px; border-bottom: 3px solid #00ffcc; font-size: 28px; font-weight: bold; }
-        #letters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-        .btn { background: #1a1a2e; border: 1px solid #34495e; color: white; padding: 15px 0; border-radius: 10px; font-size: 20px; font-weight: bold; cursor: pointer; }
-        .btn:active { background: #00ffcc; color: black; transform: scale(0.95); }
-        #win-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,255,204,0.9); color: black; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; z-index: 100; }
+        /* Яркий фон, чтобы сразу понять, что файл загрузился */
+        body { background: #1a1a2e; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
+        .boss-hp { color: #ff4d4d; font-size: 24px; font-weight: bold; }
+        #question { background: #16213e; padding: 20px; border-radius: 15px; border: 1px solid #00ffcc; margin: 20px 0; }
+        #slots { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; min-height: 40px; }
+        .slot { width: 30px; height: 35px; border-bottom: 2px solid #00ffcc; font-size: 24px; }
+        #letters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        button { background: #0f3460; border: 1px solid #00ffcc; color: white; padding: 15px 0; border-radius: 10px; font-size: 18px; cursor: pointer; }
     </style>
 </head>
 <body>
-
-    <div id="win-screen">БОСС ПОВЕРЖЕН! 🎉</div>
-
-    <div class="boss-hp">ОРОЧИМАРУ: <span id="hp">100</span> HP</div>
-    
-    <div id="question">ЗАГРУЗКА...</div>
-    <div id="slots"></div>
-    <div id="letters"></div>
-
-    <button onclick="location.reload()" style="margin-top: 30px; background: none; border: 1px solid #444; color: #444; padding: 5px 10px; border-radius: 5px;">Сброс</button>
+    <div id="ui">
+        <div class="boss-hp">БОСС: <span id="hp">100</span> HP</div>
+        <div id="question">ЗАГРУЗКА...</div>
+        <div id="slots"></div>
+        <div id="letters"></div>
+    </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+        // Запускаем всё ТОЛЬКО после полной загрузки страницы
+        window.addEventListener('load', function() {
+            try {
+                const tg = window.Telegram.WebApp;
+                tg.ready();
+                tg.expand();
 
-        const questions = [
-            {q: "Имя девятихвостого лиса?", a: "КУРАМА"},
-            {q: "Кто носит соломенную шляпу?", a: "ЛУФФИ"},
-            {q: "Техника Наруто с клонами?", a: "РАЗМНОЖЕНИЕ"}
-        ];
+                const questions = [
+                    {q: "Имя девятихвостого лиса?", a: "КУРАМА"},
+                    {q: "Кто носит соломенную шляпу?", a: "ЛУФФИ"}
+                ];
+                let cur = 0, input = "", hp = 100;
 
-        let cur = 0, input = "", hp = 100;
-
-        function start() {
-            const q = questions[cur];
-            document.getElementById('question').innerText = q.q;
-            document.getElementById('hp').innerText = hp;
-            
-            const slots = document.getElementById('slots');
-            slots.innerHTML = "";
-            for(let i=0; i<q.a.length; i++) slots.innerHTML += `<div class="slot" id="s${i}"></div>`;
-            
-            const grid = document.getElementById('letters');
-            grid.innerHTML = "";
-            let chars = (q.a + "АБВГДЕ").split('').sort(() => Math.random() - 0.5);
-            
-            chars.forEach(c => {
-                let b = document.createElement('button');
-                b.className = 'btn';
-                b.innerText = c;
-                b.onclick = () => {
-                    if(input.length < q.a.length) {
-                        document.getElementById('s'+input.length).innerText = c;
-                        input += c;
-                        b.style.opacity = "0.2";
-                        b.disabled = true;
-                        if(input.length == q.a.length) check();
-                    }
-                };
-                grid.appendChild(b);
-            });
-        }
-
-        function check() {
-            if(input === questions[cur].a) {
-                hp -= 34;
-                if(hp <= 0) {
-                    document.getElementById('win-screen').style.display = 'flex';
-                    tg.HapticFeedback.notificationOccurred('success');
-                    setTimeout(() => location.reload(), 3000);
-                } else {
-                    cur = (cur + 1) % questions.length;
-                    input = "";
-                    start();
+                function render() {
+                    const q = questions[cur];
+                    document.getElementById('question').innerText = q.q;
+                    document.getElementById('hp').innerText = hp;
+                    const s = document.getElementById('slots');
+                    s.innerHTML = "";
+                    for(let i=0; i<q.a.length; i++) s.innerHTML += `<div class="slot" id="s${i}"></div>`;
+                    
+                    const g = document.getElementById('letters');
+                    g.innerHTML = "";
+                    let chars = (q.a + "АБВГ").split('').sort(() => Math.random() - 0.5);
+                    chars.forEach(c => {
+                        let b = document.createElement('button');
+                        b.innerText = c;
+                        b.onclick = function() {
+                            if(input.length < q.a.length) {
+                                document.getElementById('s'+input.length).innerText = c;
+                                input += c;
+                                this.style.opacity = "0.3";
+                                this.disabled = true;
+                                if(input.length == q.a.length) {
+                                    if(input == q.a) {
+                                        hp -= 50;
+                                        if(hp <= 0) { alert("ПОБЕДА!"); location.reload(); }
+                                        else { cur++; input = ""; render(); }
+                                    } else {
+                                        tg.HapticFeedback.notificationOccurred('error');
+                                        alert("ОШИБКА!");
+                                        input = ""; render();
+                                    }
+                                }
+                            }
+                        };
+                        g.appendChild(b);
+                    });
                 }
-            } else {
-                tg.HapticFeedback.notificationOccurred('error');
-                alert("ОШИБКА! Попробуй снова");
-                input = "";
-                start();
+                render();
+            } catch (e) {
+                document.body.innerHTML = "<h1>ОШИБКА JS: " + e.message + "</h1>";
             }
-        }
-
-        start();
+        });
     </script>
 </body>
 </html>
