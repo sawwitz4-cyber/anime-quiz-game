@@ -5,72 +5,172 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org"></script>
     <style>
-        body { background: #0f0f1a; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
-        .hp-box { font-size: 20px; font-weight: bold; margin: 10px; }
-        #boss-hp { color: #ff4d4d; }
-        #player-hp { color: #00d9ff; }
-        #question { background: #16213e; padding: 15px; border-radius: 10px; border: 1px solid #00ffcc; margin: 20px 0; min-height: 40px; }
-        #slots { display: flex; justify-content: center; gap: 5px; margin-bottom: 20px; }
-        .slot { width: 35px; height: 35px; border-bottom: 2px solid #00ffcc; font-size: 24px; }
-        #letters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-        .letter-btn { background: #1a1a2e; border: 1px solid #34495e; color: white; padding: 15px 0; border-radius: 8px; font-size: 18px; }
-        .letter-btn:active { background: #00ffcc; color: black; }
+        body { background: #0f0f1a; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 0; overflow-x: hidden; }
+        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; align-items: center; }
+        .active { display: flex; }
+        
+        h1 { color: #00ffcc; text-shadow: 0 0 10px #00ffcc; }
+        .btn { background: #1a1a2e; border: 1px solid #34495e; color: white; padding: 15px 30px; border-radius: 12px; margin: 10px; width: 80%; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .btn-main { background: linear-gradient(45deg, #00ffcc, #0099ff); color: #0f0f1a; border: none; }
+        
+        /* Stats Bar */
+        .stats-bar { background: #16213e; padding: 10px; width: 100%; display: flex; justify-content: space-around; font-size: 14px; border-bottom: 1px solid #34495e; }
+        
+        /* Battle elements */
+        #question { background: #16213e; padding: 15px; border-radius: 15px; border: 1px solid #00ffcc; margin: 20px 0; width: 100%; box-sizing: border-box; }
+        #slots { display: flex; justify-content: center; gap: 5px; margin-bottom: 20px; flex-wrap: wrap; }
+        .slot { width: 30px; height: 35px; border-bottom: 2px solid #00ffcc; font-size: 22px; }
+        #letters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; }
+        
+        input { background: #1a1a2e; border: 1px solid #00ffcc; color: white; padding: 15px; border-radius: 10px; width: 80%; margin-bottom: 20px; font-size: 18px; }
     </style>
 </head>
 <body>
-    <div class="hp-box">БОСС HP: <span id="boss-hp">100</span></div>
-    <div class="hp-box">ВАШЕ HP: <span id="player-hp">100</span></div>
-    
-    <div id="question">ЗАГРУЗКА БИТВЫ...</div>
-    <div id="slots"></div>
-    <div id="letters"></div>
+
+    <!-- 1. ЭКРАН СОЗДАНИЯ ПЕРСОНАЖА -->
+    <div id="screen-create" class="screen">
+        <h1>НОВЫЙ ГЕРОЙ</h1>
+        <p>Как тебя зовут, шиноби?</p>
+        <input type="text" id="p-name-input" placeholder="Твое имя...">
+        <p>Выбери стихию:</p>
+        <button class="btn" onclick="setElement('🔥 Огонь')">🔥 Огонь</button>
+        <button class="btn" onclick="setElement('💧 Вода')">💧 Вода</button>
+        <button class="btn" onclick="saveCharacter()" id="start-btn" style="display:none;" class="btn btn-main">НАЧАТЬ ПУТЬ</button>
+    </div>
+
+    <!-- 2. ГЛАВНОЕ МЕНЮ -->
+    <div id="screen-menu" class="screen">
+        <div class="stats-bar">
+            <span>👤 <b id="stat-name">---</b></span>
+            <span>⭐ LVL: <b id="stat-lvl">1</b></span>
+            <span>💰 ЗОЛОТО: <b id="stat-gold">0</b></span>
+        </div>
+        <h1>МЕНЮ</h1>
+        <button class="btn btn-main" onclick="showScreen('screen-battle'); initBattle();">🔥 ВСТУПИТЬ В БОЙ</button>
+        <button class="btn" onclick="showScreen('screen-inv')">🎒 ИНВЕНТАРЬ</button>
+        <button class="btn" style="background: gold; color: black;" onclick="buyGold()">⭐️ КУПИТЬ ЗОЛОТО (1 ★)</button>
+    </div>
+
+    <!-- 3. ЭКРАН БИТВЫ -->
+    <div id="screen-battle" class="screen">
+        <div style="color:#ff4d4d; font-weight:bold;">БОСС HP: <span id="boss-hp">100</span></div>
+        <div id="question">ЗАГРУЗКА...</div>
+        <div id="slots"></div>
+        <div id="letters"></div>
+        <button class="btn" onclick="showScreen('screen-menu')">🏳️ СБЕЖАТЬ</button>
+    </div>
+
+    <!-- 4. ИНВЕНТАРЬ -->
+    <div id="screen-inv" class="screen">
+        <h1>ИНВЕНТАРЬ</h1>
+        <div id="inv-list">У тебя пока пусто...</div>
+        <button class="btn" onclick="showScreen('screen-menu')">НАЗАД</button>
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.ready();
         tg.expand();
 
-        let questions = [{q: "Имя девятихвостого лиса?", a: "КУРАМА"}];
-        let cur = 0, currentInput = "", bHP = 100, pHP = 100;
+        let player = { name: "", element: "", lvl: 1, gold: 50, inv: [] };
+        let questions = [
+            {q: "Имя девятихвостого лиса?", a: "КУРАМА"},
+            {q: "Кто носит соломенную шляпу?", a: "ЛУФФИ"},
+            {q: "Бог смерти с яблоками?", a: "РЮК"}
+        ];
+        let curQ = 0, currentInput = "", bHP = 100;
 
-        function init() {
-            const q = questions[cur];
+        // --- ЛОГИКА ПЕРЕКЛЮЧЕНИЯ ЭКРАНОВ ---
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            updateUI();
+        }
+
+        function setElement(el) {
+            player.element = el;
+            document.getElementById('start-btn').style.display = 'block';
+        }
+
+        function saveCharacter() {
+            player.name = document.getElementById('p-name-input').value || "Герой";
+            localStorage.setItem('anime_rpg_user', JSON.stringify(player));
+            showScreen('screen-menu');
+        }
+
+        function updateUI() {
+            document.getElementById('stat-name').innerText = player.name;
+            document.getElementById('stat-gold').innerText = player.gold;
+            document.getElementById('stat-lvl').innerText = player.lvl;
+        }
+
+        // --- БИТВА ---
+        function initBattle() {
+            bHP = 100;
+            document.getElementById('boss-hp').innerText = bHP;
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = questions[curQ];
             document.getElementById('question').innerText = q.q;
+            currentInput = "";
             const slots = document.getElementById('slots');
             slots.innerHTML = "";
             for(let i=0; i<q.a.length; i++) slots.innerHTML += `<div class="slot" id="s${i}"></div>`;
             
             const grid = document.getElementById('letters');
             grid.innerHTML = "";
-            let chars = (q.a + "АБВГДЕ").split('').sort(() => Math.random() - 0.5);
+            let chars = (q.a + "АБВГДЕЗ").split('').sort(() => Math.random() - 0.5);
             chars.forEach(c => {
                 let btn = document.createElement('button');
-                btn.className = 'letter-btn';
+                btn.className = 'btn';
+                btn.style.width = "auto"; btn.style.padding = "10px";
                 btn.innerText = c;
                 btn.onclick = () => {
                     if(currentInput.length < q.a.length) {
                         document.getElementById('s'+currentInput.length).innerText = c;
                         currentInput += c;
                         btn.style.visibility = "hidden";
-                        if(currentInput.length == q.a.length) check();
+                        if(currentInput.length == q.a.length) checkAnswer();
                     }
                 };
                 grid.appendChild(btn);
             });
         }
 
-        function check() {
-            if(currentInput == questions[cur].a) {
+        function checkAnswer() {
+            if(currentInput == questions[curQ].a) {
                 bHP -= 50;
                 document.getElementById('boss-hp').innerText = bHP;
-                if(bHP <= 0) alert("ПОБЕДА!"); else { currentInput = ""; init(); }
+                if(bHP <= 0) {
+                    player.gold += 20;
+                    player.lvl += 1;
+                    localStorage.setItem('anime_rpg_user', JSON.stringify(player));
+                    alert("ПОБЕДА! +20 золота");
+                    showScreen('screen-menu');
+                } else {
+                    curQ = (curQ + 1) % questions.length;
+                    renderQuestion();
+                }
             } else {
                 tg.HapticFeedback.notificationOccurred('error');
-                alert("ОШИБКА! СТАН 2 СЕК");
-                setTimeout(() => { currentInput = ""; init(); }, 2000);
+                alert("СТАН! 2 СЕК");
+                setTimeout(renderQuestion, 2000);
             }
         }
-        init();
+
+        function buyGold() {
+            tg.sendData(JSON.stringify({action: "buy_stars"}));
+        }
+
+        // --- ЗАГРУЗКА ---
+        const saved = localStorage.getItem('anime_rpg_user');
+        if(saved) {
+            player = JSON.parse(saved);
+            showScreen('screen-menu');
+        } else {
+            showScreen('screen-create');
+        }
     </script>
 </body>
 </html>
