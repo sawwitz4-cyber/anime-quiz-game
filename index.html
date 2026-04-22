@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- ПРАВИЛЬНАЯ ССЫЛКА НА СКРИПТ -->
     <script src="https://telegram.org"></script>
     <style>
         :root { --gold: #d4af37; --bg: #0d0d12; }
@@ -20,12 +21,18 @@
     <div class="card" id="st">Мастер: Выбери действие, брось кубик и читай историю в чате бота!</div>
     <div id="opts">
         <button class="btn" onclick="send('Исследовать темный лес')">🌲 Пойти в лес</button>
-        <button class="btn" onclick="send('Искать сокровища в пещере')">💎 Искать лут</button>
-        <button class="btn" onclick="send('Напасть на патруль Орочимару')">⚔️ Напасть!</button>
+        <button class="btn" onclick="send('Искать сокровища')">💎 Искать лут</button>
+        <button class="btn" onclick="send('Напасть на патруль')">⚔️ Напасть!</button>
     </div>
+
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready(); tg.expand();
+        // Инициализация (теперь безопасная)
+        const tg = window.Telegram ? window.Telegram.WebApp : null;
+        
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
 
         function send(text) {
             const die = document.getElementById('dice');
@@ -35,10 +42,16 @@
             setTimeout(() => {
                 die.innerText = roll;
                 die.classList.remove('anim');
-                // Отправляем данные БОТУ, бот сам пойдет к ИИ
-                tg.sendData(JSON.stringify({msg: text, roll: roll}));
-                document.getElementById('st').innerText = "Судьба решена! Закрой игру и смотри ответ в чате.";
-                document.getElementById('opts').style.display = 'none';
+                
+                const data = JSON.stringify({msg: text, roll: roll});
+                
+                if (tg) {
+                    tg.sendData(data);
+                    // Закрываем приложение, чтобы увидеть ответ бота
+                    setTimeout(() => tg.close(), 100);
+                } else {
+                    alert("Бросок: " + roll + "\nДанные: " + data);
+                }
             }, 600);
         }
     </script>
