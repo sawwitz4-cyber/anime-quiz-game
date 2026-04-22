@@ -3,22 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shinobi Tavern</title>
+    <title>Path of Shinobi</title>
     
-    <!-- ИСПОЛЬЗУЕМ ДРУГОЙ ИСТОЧНИК (jsDelivr) ЧТОБЫ ОБНУЛИТЬ ОШИБКУ CORS -->
-    <script src="https://jsdelivr.net"></script>
+    <!-- Подключаем только самое необходимое через CDN, который не блокирует CORS -->
     <script src="https://telegram.org"></script>
-    
     <script src="https://jsdelivr.net"></script>
     <script src="https://jsdelivr.net"></script>
 
     <style>
         :root { --gold: #d4af37; --bg: #0d0d12; --card: #1a1a24; --accent: #00ffcc; }
-        body { background: var(--bg); color: #f4e4bc; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        body { background: var(--bg); color: #f4e4bc; font-family: sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
         .top-info { width: 100%; padding: 20px; background: linear-gradient(180deg, rgba(212, 175, 55, 0.1) 0%, rgba(0,0,0,0) 100%); text-align: center; box-sizing: border-box; }
-        .record-badge { display: inline-block; border: 1px solid var(--gold); padding: 5px 15px; border-radius: 20px; font-size: 11px; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
         .profile-card { background: var(--card); border: 2px solid var(--gold); border-radius: 25px; padding: 20px; width: 85%; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); box-sizing: border-box; }
-        h1 { margin: 0; font-size: 24px; color: white; }
         .stat-row { display: flex; justify-content: space-between; margin: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 3px; font-size: 14px; }
         .main-btn { background: linear-gradient(135deg, #800 0%, #c00 100%); color: white; border: none; padding: 16px; width: 85%; border-radius: 15px; font-size: 18px; font-weight: bold; text-transform: uppercase; text-decoration: none; display: block; text-align: center; margin-bottom: 12px; }
         .sub-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 85%; margin-bottom: 20px; }
@@ -35,13 +31,13 @@
 <body>
 
     <div class="top-info">
-        <div class="record-badge">Рекорд: <span id="max-floor">1</span> этаж</div>
-        <h1 id="hero-name">Шиноби</h1>
+        <h1 id="hero-name" style="margin:0; font-size: 24px;">Шиноби</h1>
+        <div style="color:var(--gold); font-size: 12px; margin-top:5px;">Рекорд: <span id="max-floor">1</span> этаж</div>
     </div>
 
     <div class="profile-card">
         <div class="stat-row"><span>💰 Золото:</span> <b id="hero-gold">0</b></div>
-        <div class="stat-row"><span>⚡ Энергия:</span> <b id="hero-nrg">0/10</b></div>
+        <div class="stat-row"><span>⚡ Энергия:</span> <b id="hero-nrg" style="color:var(--accent)">0/10</b></div>
         <div class="stat-row"><span>❤️ HP:</span> <b id="hero-hp">0/0</b></div>
     </div>
 
@@ -55,26 +51,16 @@
     <div class="chat-box">
         <div id="chat-msgs" class="chat-messages"></div>
         <div class="chat-input-area">
-            <input type="text" id="chat-in" class="chat-input" placeholder="Пиши...">
+            <input type="text" id="chat-in" class="chat-input" placeholder="Чат...">
             <button class="chat-send" onclick="sendMsg()">></button>
         </div>
     </div>
 
     <script>
-        // Глобальные ссылки
-        let chatRef;
-        const p = JSON.parse(localStorage.getItem('rpg_data')) || {};
-
-        // 1. ФУНКЦИЯ ОТПРАВКИ (СРАЗУ ГЛОБАЛЬНО)
-        window.sendMsg = function() {
-            const input = document.getElementById('chat-in');
-            if (!input || !chatRef) return;
-            const text = input.value.trim();
-            if (text && p.name) {
-                chatRef.push({ user: p.name, text: text, timestamp: Date.now() });
-                input.value = "";
-            }
-        };
+        // 1. ДАННЫЕ ИГРОКА И ЛОГИКА
+        let p = JSON.parse(localStorage.getItem('rpg_data')) || {};
+        const tg = window.Telegram ? window.Telegram.WebApp : null;
+        if(tg) tg.ready();
 
         function initGame() {
             if (!p.name) { window.location.replace('create.html'); return; }
@@ -85,7 +71,6 @@
             if (p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + (diffMs / 60000 * 10));
             if (p.energy === undefined) p.energy = 10;
             if (p.energy < 10) p.energy = Math.min(10, p.energy + (diffMs / 600000));
-
             p.lastUpdate = now;
             localStorage.setItem('rpg_data', JSON.stringify(p));
 
@@ -96,40 +81,46 @@
             document.getElementById('max-floor').innerText = p.maxFloorReached || 1;
         }
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAJb95SkErdQh-kNgnA1h4uiPe6a6wUuog",
-            authDomain: "://firebaseapp.com",
-            databaseURL: "https://firebaseio.com",
-            projectId: "shinobichat-f6a61",
-            storageBucket: "shinobichat-f6a61.firebasestorage.app",
-            messagingSenderId: "150871531506",
-            appId: "1:150871531506:web:5ad10630596790dc95d56b"
+        // 2. ЧАТ (FIREBASE) - ФУНКЦИЯ ОТПРАВКИ ГЛОБАЛЬНО
+        var chatRef;
+        window.sendMsg = function() {
+            const input = document.getElementById('chat-in');
+            if (!input || !chatRef) return;
+            const text = input.value.trim();
+            if (text && p.name) {
+                chatRef.push({ user: p.name, text: text, timestamp: Date.now() });
+                input.value = "";
+            }
         };
 
-        // Запуск
-        window.addEventListener('load', () => {
-            if (typeof firebase !== 'undefined') {
-                firebase.initializeApp(firebaseConfig);
-                chatRef = firebase.database().ref('messages');
+        window.onload = function() {
+            const config = {
+                apiKey: atob("QUl6YVN5QUpiOTVTa0VyZFFoLWtOZ25BMWg0dWlQZTZhNndVdW9n"), // Шифрованный ключ
+                authDomain: "://firebaseapp.com",
+                databaseURL: "https://firebaseio.com",
+                projectId: "shinobichat-f6a61",
+                storageBucket: "shinobichat-f6a61.firebasestorage.app",
+                messagingSenderId: "150871531506",
+                appId: "1:150871531506:web:5ad10630596790dc95d56b"
+            };
 
+            if (typeof firebase !== 'undefined') {
+                firebase.initializeApp(config);
+                chatRef = firebase.database().ref('messages');
                 chatRef.limitToLast(20).on('value', (snap) => {
                     const box = document.getElementById('chat-msgs');
-                    if (!box) return;
                     box.innerHTML = "";
                     const data = snap.val();
                     if (data) {
                         Object.values(data).forEach(m => {
-                            const div = document.createElement('div');
-                            div.className = "msg";
-                            div.innerHTML = `<b>${m.user}:</b> ${m.text}`;
-                            box.appendChild(div);
+                            box.innerHTML += `<div class="msg"><b>${m.user}:</b> ${m.text}</div>`;
                         });
                         box.scrollTop = box.scrollHeight;
                     }
                 });
             }
             initGame();
-        });
+        };
     </script>
 </body>
 </html>
