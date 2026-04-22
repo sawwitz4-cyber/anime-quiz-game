@@ -1,0 +1,89 @@
+html
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Карта Мира</title>
+    <style>
+        :root { --gold: #d4af37; --bg: #0d0d12; }
+        body { 
+            background: #000; color: white; font-family: sans-serif; margin: 0; padding: 0;
+            background-image: url('https://freepik.com');
+            background-size: cover; background-position: center;
+        }
+        .overlay { background: rgba(0,0,0,0.7); min-height: 100vh; padding: 20px; text-align: center; }
+        
+        .stat-panel { background: rgba(0,0,0,0.8); border: 1px solid var(--gold); border-radius: 15px; padding: 10px; display: flex; justify-content: space-around; margin-bottom: 30px; }
+        .energy-txt { color: #00ffcc; font-weight: bold; }
+
+        .map-container { position: relative; width: 300px; height: 400px; margin: 0 auto; border: 2px dashed var(--gold); border-radius: 20px; background: rgba(255,255,255,0.05); }
+
+        /* Точки на карте */
+        .map-point { 
+            position: absolute; width: 60px; height: 60px; background: var(--gold); color: black;
+            border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: bold; box-shadow: 0 0 15px var(--gold); cursor: pointer; transition: 0.3s;
+        }
+        .map-point:active { transform: scale(1.2); }
+        .map-point span { font-size: 20px; }
+
+        .btn-back { display: block; margin-top: 30px; color: #888; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="overlay">
+        <div class="stat-panel">
+            <span>❤️ HP: <span id="hp">0</span></span>
+            <span class="energy-txt">⚡ Энергия: <span id="nrg">0</span>/10</span>
+        </div>
+
+        <h2>КАРТА МИРА</h2>
+
+        <div class="map-container">
+            <!-- Деревня (здесь мы сейчас) -->
+            <div class="map-point" style="bottom: 20px; left: 120px; background: #4CAF50;">
+                <span>🏠</span> ДОМ
+            </div>
+
+            <!-- Подземелье 1 -->
+            <div class="map-point" style="top: 150px; left: 30px;" onclick="goToDungeon(1)">
+                <span>💀</span> ПЕЩЕРА
+                <div style="font-size:8px">-2⚡</div>
+            </div>
+
+            <!-- Подземелье 2 -->
+            <div class="map-point" style="top: 50px; right: 40px;" onclick="goToDungeon(5)">
+                <span>👹</span> ЛОГОВО
+                <div style="font-size:8px">-2⚡</div>
+            </div>
+        </div>
+
+        <a href="index.html" class="btn-back">↩ Вернуться в Таверну</a>
+    </div>
+
+    <script>
+        let p = JSON.parse(localStorage.getItem('rpg_data'));
+
+        function updateUI() {
+            document.getElementById('hp').innerText = Math.floor(p.hp);
+            document.getElementById('nrg').innerText = p.energy || 0;
+        }
+
+        function goToDungeon(floor) {
+            if ((p.energy || 0) < 2) {
+                alert("Недостаточно энергии! Отдохни в таверне.");
+                return;
+            }
+            p.energy -= 2;
+            p.floor = floor; // Устанавливаем этаж в зависимости от точки
+            save();
+            window.location.href = 'world.html';
+        }
+
+        function save() { localStorage.setItem('rpg_data', JSON.stringify(p)); }
+        updateUI();
+    </script>
+</body>
+</html>

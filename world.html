@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Путь Шиноби</title>
+    <style>
+        :root { --gold: #d4af37; --glass: rgba(15, 15, 20, 0.9); }
+        body { 
+            background: #000; 
+            color: white; 
+            font-family: sans-serif; 
+            margin: 0; 
+            /* Настройки фона, чтобы картинка была на весь экран */
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            transition: background 1s ease-in-out;
+            min-height: 100vh;
+        }
+        .overlay { 
+            background: rgba(0,0,0,0.6); 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px; 
+            box-sizing: border-box;
+        }
+        .floor-badge { 
+            background: var(--gold); 
+            color: black; 
+            padding: 5px 20px; 
+            border-radius: 0 0 15px 15px; 
+            font-weight: bold; 
+            margin-bottom: 30px; 
+            box-shadow: 0 0 10px var(--gold);
+        }
+        .event-card { 
+            background: var(--glass); 
+            border: 1px solid var(--gold); 
+            border-radius: 20px; 
+            padding: 20px; 
+            width: 100%; 
+            max-width: 320px; 
+            text-align: center; 
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        #event-img { width: 120px; height: 120px; margin-bottom: 15px; filter: drop-shadow(0 0 10px gold); }
+        .btn { 
+            background: #1a1a24; 
+            border: 1px solid var(--gold); 
+            color: var(--gold); 
+            padding: 15px; 
+            width: 100%; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            margin-top: 10px; 
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .btn-fight { background: #800; color: white; border: none; }
+        .btn:active { transform: scale(0.98); opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <div class="overlay">
+        <div class="floor-badge">ЭТАЖ: <span id="floor-val">1</span></div>
+        
+        <div class="event-card">
+            <h2 id="ev-name">ПЕРЕКРЕСТОК</h2>
+            <img id="event-img" src="https://icons8.com">
+            <p id="ev-text">Вы входите в новую область подземелья...</p>
+            <div id="choices">
+                <button class="btn" onclick="generateEvent()">ИДТИ ВПЕРЕД 👣</button>
+            </div>
+        </div>
+
+        <a href="#" onclick="exitToVillage()" style="color: #888; margin-top: 
+        30px; text-decoration: none;">Вернуться в деревню</a>
+    </div>
+
+    <script>
+        // Инициализируем данные
+        let p = JSON.parse(localStorage.getItem('rpg_data')) || { floor: 1, gold: 100, hp: 100, maxHp: 100 };
+        if (!p.floor) p.floor = 1;
+
+        const data = {
+            bgs: [
+                "images/пещера.png" // Твой единственный фон
+            ],
+            events: [
+                { name: "ЗАСАДА", text: "Враг преградил путь!", img: "https://icons8.com", type: "fight" },
+                { name: "СУНДУК", text: "Вы нашли золото!", img: "https://icons8.com", type: "loot" },
+                { name: "АЛТАРЬ", text: "Силы восстанавливаются.", img: "https://icons8.com", type: "heal" }
+            ]
+        };
+
+        function exitToVillage() {
+                p.lastUpdate = Date.now(); // Фиксируем время ухода из подземелья
+                save();
+                window.location.href = 'index.html';
+            }
+        function updateFloorVisuals() {
+            document.getElementById('floor-val').innerText = p.floor;
+            
+            // Если в массиве bgs есть хотя бы одна картинка
+            if (data.bgs.length > 0) {
+                let selectedBg = data.bgs[0]; // Пока берем только первую
+                document.body.style.backgroundImage = "url('" + selectedBg + "')";
+            }
+        }
+
+        function generateEvent() {
+            let ev = data.events[Math.floor(Math.random() * data.events.length)];
+            
+            document.getElementById('ev-name').innerText = ev.name;
+            document.getElementById('ev-text').innerText = ev.text;
+            document.getElementById('event-img').src = ev.img;
+
+            let html = "";
+            if (ev.type === "fight") {
+                p.currentEnemyHP = 50 + (p.floor * 30);
+                p.currentEnemyDmg = 10 + (p.floor * 5);
+                save();
+                html = `<button class="btn btn-fight" onclick="location.href='battle.html'">ВСТУПИТЬ В БОЙ</button>`;
+            } else if (ev.type === "loot") {
+                let gain = 20 + (p.floor * 5);
+                p.gold += gain;
+                p.floor++; 
+                save();
+                html = `<button class="btn" onclick="location.reload()">ЗАБРАТЬ +${gain}💰 И ИДТИ ДАЛЬШЕ</button>`;
+            } else if (ev.type === "heal") {
+                p.hp = p.maxHp;
+                p.floor++;
+                save();
+                html = `<button class="btn" onclick="location.reload()">ВОССТАНОВИТЬСЯ И ИДТИ ДАЛЬШЕ</button>`;
+            }
+            document.getElementById('choices').innerHTML = html;
+        }
+
+        function save() { localStorage.setItem('rpg_data', JSON.stringify(p)); }
+        
+        // Сразу запускаем отрисовку фона
+        updateFloorVisuals();
+    </script>
+</body>
+</html>
