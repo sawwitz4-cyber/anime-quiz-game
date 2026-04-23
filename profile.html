@@ -1,40 +1,555 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Shinobi Tavern — Профиль</title>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
     <style>
-        body { background: #0d0d12; color: #f4e4bc; font-family: sans-serif; padding: 20px; }
-        .hero-card { background: linear-gradient(135deg, #1a1a24, #2b1d0e); border: 2px solid #d4af37; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
-        .stat-line { display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding: 8px 0; }
-        .inv-box { background: #111; border: 1px solid #444; border-radius: 15px; padding: 15px; min-height: 100px; }
-        .back-btn { display: block; text-align: center; margin-top: 30px; color: #d4af37; text-decoration: none; }
+        :root {
+            --gold: #d4af37;
+            --gold-soft: rgba(212, 175, 55, 0.14);
+            --bg: #0d0d12;
+            --bg-2: #11111a;
+            --card: rgba(24, 24, 34, 0.92);
+            --card-2: rgba(31, 31, 43, 0.96);
+            --line: rgba(255,255,255,0.07);
+            --text: #f4e4bc;
+            --muted: #bfae7c;
+            --cyan: #42d6ff;
+            --red: #ff5c6a;
+            --green: #41d48d;
+            --shadow: 0 14px 36px rgba(0,0,0,0.35);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top, rgba(212,175,55,0.08), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(66,214,255,0.08), transparent 24%),
+                linear-gradient(180deg, #0b0b10 0%, #11111a 100%);
+            padding: 18px 12px 28px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .page {
+            width: 100%;
+            max-width: 560px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            border-radius: 26px;
+            padding: 18px;
+            background:
+                linear-gradient(160deg, rgba(212,175,55,0.10), transparent 34%),
+                linear-gradient(180deg, var(--card) 0%, var(--card-2) 100%);
+            border: 1px solid rgba(212,175,55,0.26);
+            box-shadow: var(--shadow);
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 85% 15%, rgba(255,255,255,0.06), transparent 16%),
+                linear-gradient(135deg, rgba(255,255,255,0.03), transparent 38%);
+            pointer-events: none;
+        }
+
+        .hero-top {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .avatar-wrap {
+            position: relative;
+            width: 96px;
+            height: 96px;
+            flex: 0 0 96px;
+        }
+
+        .avatar-ring {
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(212,175,55,0.7), rgba(66,214,255,0.35));
+            filter: blur(0.4px);
+        }
+
+        .avatar {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.16);
+            background:
+                radial-gradient(circle at 30% 30%, rgba(255,255,255,0.16), transparent 34%),
+                linear-gradient(180deg, #232332 0%, #181822 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 24px rgba(212,175,55,0.14);
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .avatar-fallback {
+            font-size: 30px;
+            font-weight: 800;
+            color: #fff4c8;
+            letter-spacing: 1px;
+        }
+
+        .hero-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .profile-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: var(--muted);
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .profile-name {
+            margin: 0;
+            font-size: 28px;
+            color: #fff3c4;
+            line-height: 1.05;
+            word-break: break-word;
+        }
+
+        .profile-class {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 15px;
+        }
+
+        .hero-badges {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .badge {
+            padding: 8px 11px;
+            border-radius: 999px;
+            font-size: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #e9dfb8;
+        }
+
+        .card {
+            border-radius: 22px;
+            padding: 16px;
+            background: linear-gradient(180deg, rgba(24,24,34,0.92) 0%, rgba(31,31,43,0.96) 100%);
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: var(--shadow);
+        }
+
+        .section-title {
+            margin: 0 0 14px 0;
+            font-size: 16px;
+            color: #fff1b6;
+            letter-spacing: 0.2px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-box {
+            background: rgba(0,0,0,0.16);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 12px;
+        }
+
+        .stat-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #d8cba2;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: #fff7d5;
+        }
+
+        .bar {
+            height: 10px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.06);
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            margin-top: 10px;
+        }
+
+        .fill {
+            height: 100%;
+            width: 0%;
+            border-radius: inherit;
+            transition: width 0.35s ease;
+        }
+
+        .fill-hp {
+            background: linear-gradient(90deg, var(--red) 0%, #ff8b73 100%);
+        }
+
+        .fill-energy {
+            background: linear-gradient(90deg, #1498c1 0%, var(--cyan) 100%);
+        }
+
+        .stats-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .line {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 11px 12px;
+            border-radius: 14px;
+            background: rgba(0,0,0,0.16);
+            border: 1px solid rgba(255,255,255,0.05);
+            font-size: 14px;
+        }
+
+        .line span {
+            color: #d8cba2;
+        }
+
+        .line b {
+            color: #fff6d1;
+        }
+
+        .inventory-empty {
+            min-height: 110px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--muted);
+            background: rgba(0,0,0,0.16);
+            border: 1px dashed rgba(255,255,255,0.10);
+            border-radius: 18px;
+            padding: 18px;
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .item {
+            padding: 12px;
+            border-radius: 16px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+            border: 1px solid rgba(212,175,55,0.10);
+            min-height: 74px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+        }
+
+        .item-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff0c0;
+            word-break: break-word;
+        }
+
+        .item-sub {
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 58px;
+            border-radius: 18px;
+            text-decoration: none;
+            color: #fff0bb;
+            font-weight: 700;
+            background: linear-gradient(180deg, #262637 0%, #1a1a26 100%);
+            border: 1px solid rgba(212,175,55,0.24);
+            box-shadow: var(--shadow);
+        }
+
+        @media (max-width: 430px) {
+            .hero-top {
+                align-items: flex-start;
+            }
+
+            .profile-name {
+                font-size: 24px;
+            }
+
+            .stats-grid,
+            .inventory-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .avatar-wrap {
+                width: 84px;
+                height: 84px;
+                flex-basis: 84px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="hero-card">
-        <h2 id="p-name" style="margin:0; color:#d4af37;">---</h2>
-        <p id="p-class" style="font-style:italic; margin-top:5px; color:#888;">---</p>
-        
-        <div class="stat-line"><span>❤️ Здоровье:</span> <b id="p-hp">0/0</b></div>
-        <div class="stat-line"><span>⚔️ Урон:</span> <b id="p-dmg">0</b></div>
-        <div class="stat-line"><span>⚡ Скорость:</span> <b id="p-spd">0</b></div>
+    <div class="page">
+        <section class="hero">
+            <div class="hero-top">
+                <div class="avatar-wrap">
+                    <div class="avatar-ring"></div>
+                    <div class="avatar" id="avatar-box">
+                        <div class="avatar-fallback" id="avatar-fallback">Ш</div>
+                    </div>
+                </div>
+
+                <div class="hero-info">
+                    <div class="profile-label">🥷 Профиль шиноби</div>
+                    <h1 class="profile-name" id="p-name">---</h1>
+                    <div class="profile-class" id="p-class">---</div>
+
+                    <div class="hero-badges">
+                        <div class="badge" id="badge-gold">💰 0 золота</div>
+                        <div class="badge" id="badge-energy">⚡ 0 энергии</div>
+                        <div class="badge" id="badge-class">🏷️ ---</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2 class="section-title">Основные параметры</h2>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-top">
+                        <span>❤️ Здоровье</span>
+                        <b id="p-hp-text">0/0</b>
+                    </div>
+                    <div class="stat-value" id="p-hp-big">0%</div>
+                    <div class="bar">
+                        <div class="fill fill-hp" id="hp-fill"></div>
+                    </div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-top">
+                        <span>⚡ Энергия</span>
+                        <b id="p-energy-text">0/0</b>
+                    </div>
+                    <div class="stat-value" id="p-energy-big">0%</div>
+                    <div class="bar">
+                        <div class="fill fill-energy" id="energy-fill"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2 class="section-title">Характеристики</h2>
+
+            <div class="stats-list">
+                <div class="line"><span>⚔️ Урон</span><b id="p-dmg">0</b></div>
+                <div class="line"><span>👢 Скорость</span><b id="p-spd">0</b></div>
+                <div class="line"><span>💰 Золото</span><b id="p-gold">0</b></div>
+                <div class="line"><span>🧬 ID класса</span><b id="p-class-id">---</b></div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2 class="section-title">🎒 Твоя сумка</h2>
+            <div id="inv-wrap">
+                <div class="inventory-empty">Пусто...</div>
+            </div>
+        </section>
+
+        <a href="index.html" class="back-btn">← Вернуться в меню</a>
     </div>
 
-    <h3>🎒 ТВОЯ СУМКА</h3>
-    <div class="inv-box" id="inv-list">Пусто...</div>
-
-    <a href="index.html" class="back-btn">← Вернуться в меню</a>
-
     <script>
-        let p = JSON.parse(localStorage.getItem('rpg_data'));
-        if (p) {
+        const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
+
+        const tgUser = tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
+
+        function getPlayer() {
+            try {
+                return JSON.parse(localStorage.getItem('rpg_data') || 'null');
+            } catch (e) {
+                return null;
+            }
+        }
+
+        const p = getPlayer();
+
+        if (!p || !p.name) {
+            window.location.href = 'create.html';
+        }
+
+        if (!Array.isArray(p.inv)) p.inv = [];
+        if (typeof p.hp !== "number") p.hp = 100;
+        if (typeof p.maxHp !== "number") p.maxHp = 100;
+        if (typeof p.energy !== "number") p.energy = 0;
+        if (typeof p.maxEnergy !== "number") p.maxEnergy = 10;
+        if (typeof p.dmg !== "number") p.dmg = 0;
+        if (typeof p.spd !== "number") p.spd = 0;
+        if (typeof p.gold !== "number") p.gold = 0;
+        if (!p.classTitle) p.classTitle = "Без класса";
+        if (!p.classId) p.classId = "unknown";
+
+        function percent(cur, max) {
+            if (!max || max <= 0) return 0;
+            return Math.max(0, Math.min(100, Math.round((cur / max) * 100)));
+        }
+
+        function setAvatar() {
+            const avatarBox = document.getElementById('avatar-box');
+            const fallback = document.getElementById('avatar-fallback');
+
+            const photoUrl = tgUser && tgUser.photo_url ? tgUser.photo_url : "";
+            const displayName = p.name || "Шиноби";
+
+            const initials = displayName
+                .trim()
+                .split(/\s+/)
+                .slice(0, 2)
+                .map(part => part[0] ? part[0].toUpperCase() : "")
+                .join("") || "Ш";
+
+            fallback.textContent = initials;
+
+            if (photoUrl) {
+                const img = document.createElement('img');
+                img.src = photoUrl;
+                img.alt = displayName;
+                img.referrerPolicy = "no-referrer";
+
+                img.onerror = function () {
+                    img.remove();
+                    fallback.style.display = "flex";
+                };
+
+                fallback.style.display = "none";
+                avatarBox.appendChild(img);
+            } else {
+                fallback.style.display = "flex";
+            }
+        }
+
+        function renderInventory(items) {
+            const wrap = document.getElementById('inv-wrap');
+
+            if (!items.length) {
+                wrap.innerHTML = '<div class="inventory-empty">Сумка пока пуста. Время идти за добычей.</div>';
+                return;
+            }
+
+            wrap.innerHTML = `
+                <div class="inventory-grid">
+                    ${items.map((item, i) => `
+                        <div class="item">
+                            <div class="item-name">${escapeHtml(String(item))}</div>
+                            <div class="item-sub">Слот #${i + 1}</div>
+                        </div>
+                    `).join("")}
+                </div>
+            `;
+        }
+
+        function escapeHtml(str) {
+            return str
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function updateUI() {
+            const hpPct = percent(p.hp, p.maxHp);
+            const energyPct = percent(p.energy, p.maxEnergy);
+
             document.getElementById('p-name').innerText = p.name;
             document.getElementById('p-class').innerText = p.classTitle;
-            document.getElementById('p-hp').innerText = p.hp + "/" + p.maxHp;
+            document.getElementById('p-hp-text').innerText = `${p.hp}/${p.maxHp}`;
+            document.getElementById('p-hp-big').innerText = `${hpPct}%`;
+            document.getElementById('p-energy-text').innerText = `${p.energy}/${p.maxEnergy}`;
+            document.getElementById('p-energy-big').innerText = `${energyPct}%`;
+
             document.getElementById('p-dmg').innerText = p.dmg;
             document.getElementById('p-spd').innerText = p.spd;
-            if (p.inv.length > 0) document.getElementById('inv-list').innerHTML = p.inv.join("<br>");
+            document.getElementById('p-gold').innerText = p.gold;
+            document.getElementById('p-class-id').innerText = p.classId;
+
+            document.getElementById('badge-gold').innerText = `💰 ${p.gold} золота`;
+            document.getElementById('badge-energy').innerText = `⚡ ${p.energy}/${p.maxEnergy} энергии`;
+            document.getElementById('badge-class').innerText = `🏷️ ${p.classTitle}`;
+
+            document.getElementById('hp-fill').style.width = `${hpPct}%`;
+            document.getElementById('energy-fill').style.width = `${energyPct}%`;
+
+            renderInventory(p.inv);
+            setAvatar();
         }
+
+        updateUI();
     </script>
 </body>
 </html>
