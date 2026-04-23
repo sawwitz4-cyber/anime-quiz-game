@@ -1,88 +1,667 @@
-html
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Карта Мира</title>
     <style>
-        :root { --gold: #d4af37; --bg: #0d0d12; }
-        body { 
-            background: #000; color: white; font-family: sans-serif; margin: 0; padding: 0;
-            background-image: url('https://freepik.com');
-            background-size: cover; background-position: center;
+        :root {
+            --gold: #d4af37;
+            --gold-soft: rgba(212, 175, 55, 0.14);
+            --bg: #0d0d12;
+            --card: rgba(18, 18, 26, 0.88);
+            --card-2: rgba(24, 24, 34, 0.94);
+            --line: rgba(255,255,255,0.08);
+            --text: #f4ecd1;
+            --muted: #b7ae8d;
+            --green: #3db56a;
+            --cyan: #00e0c6;
+            --danger: #a32626;
+            --shadow: 0 16px 40px rgba(0,0,0,0.45);
         }
-        .overlay { background: rgba(0,0,0,0.7); min-height: 100vh; padding: 20px; text-align: center; }
-        
-        .stat-panel { background: rgba(0,0,0,0.8); border: 1px solid var(--gold); border-radius: 15px; padding: 10px; display: flex; justify-content: space-around; margin-bottom: 30px; }
-        .energy-txt { color: #00ffcc; font-weight: bold; }
 
-        .map-container { position: relative; width: 300px; height: 400px; margin: 0 auto; border: 2px dashed var(--gold); border-radius: 20px; background: rgba(255,255,255,0.05); }
-
-        /* Точки на карте */
-        .map-point { 
-            position: absolute; width: 60px; height: 60px; background: var(--gold); color: black;
-            border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-size: 10px; font-weight: bold; box-shadow: 0 0 15px var(--gold); cursor: pointer; transition: 0.3s;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
-        .map-point:active { transform: scale(1.2); }
-        .map-point span { font-size: 20px; }
 
-        .btn-back { display: block; margin-top: 30px; color: #888; text-decoration: none; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: var(--text);
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at top, rgba(212,175,55,0.12), transparent 25%),
+                linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.7)),
+                linear-gradient(180deg, #0a0a10 0%, #11111a 100%);
+        }
+
+        .overlay {
+            min-height: 100vh;
+            padding: 16px 14px 26px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .page {
+            width: 100%;
+            max-width: 520px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .hero-card,
+        .panel,
+        .map-shell {
+            background: linear-gradient(180deg, var(--card) 0%, var(--card-2) 100%);
+            border: 1px solid rgba(212,175,55,0.24);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+        }
+
+        .hero-card {
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-card::before,
+        .map-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(212,175,55,0.08), transparent 35%);
+            pointer-events: none;
+        }
+
+        .title {
+            margin: 0;
+            font-size: 28px;
+            text-align: center;
+            color: #fff2b8;
+            letter-spacing: 0.5px;
+        }
+
+        .subtitle {
+            margin-top: 6px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .hud {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .stat {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat .label {
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 5px;
+        }
+
+        .stat .value {
+            font-size: 19px;
+            font-weight: 800;
+            color: #fff3bf;
+        }
+
+        .stat.energy .value {
+            color: var(--cyan);
+        }
+
+        .map-shell {
+            position: relative;
+            padding: 14px;
+            overflow: hidden;
+        }
+
+        .map-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .map-head h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #fff1b5;
+        }
+
+        .map-note {
+            font-size: 12px;
+            color: var(--muted);
+            text-align: right;
+        }
+
+        .map-container {
+            position: relative;
+            width: 100%;
+            height: 520px;
+            border-radius: 22px;
+            overflow: hidden;
+            border: 1px solid rgba(212,175,55,0.18);
+            background:
+                radial-gradient(circle at 50% 20%, rgba(255,255,255,0.06), transparent 22%),
+                radial-gradient(circle at 30% 70%, rgba(212,175,55,0.08), transparent 20%),
+                linear-gradient(180deg, rgba(8,8,12,0.75), rgba(5,5,8,0.92)),
+                url("images/map-bg.jpg") center / cover no-repeat;
+        }
+
+        .map-fog {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(255,255,255,0.03), transparent 18%),
+                radial-gradient(circle at 80% 30%, rgba(255,255,255,0.02), transparent 14%),
+                radial-gradient(circle at 50% 80%, rgba(212,175,55,0.04), transparent 18%);
+            pointer-events: none;
+        }
+
+        .route {
+            position: absolute;
+            background: linear-gradient(180deg, rgba(212,175,55,0.26), rgba(212,175,55,0.1));
+            box-shadow: 0 0 12px rgba(212,175,55,0.12);
+            border-radius: 999px;
+            transform-origin: top left;
+            pointer-events: none;
+        }
+
+        .point {
+            position: absolute;
+            width: 84px;
+            min-height: 84px;
+            border-radius: 22px;
+            padding: 10px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid rgba(212,175,55,0.24);
+            background: rgba(18,18,28,0.88);
+            color: #f6edcd;
+            box-shadow: var(--shadow);
+            transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+            user-select: none;
+        }
+
+        .point:active {
+            transform: scale(0.97);
+        }
+
+        .point:hover {
+            box-shadow: 0 10px 28px rgba(0,0,0,0.5), 0 0 18px rgba(212,175,55,0.14);
+        }
+
+        .point.home {
+            background: linear-gradient(180deg, rgba(53,133,78,0.95), rgba(41,97,58,0.95));
+            border-color: rgba(102,255,153,0.25);
+        }
+
+        .point.locked {
+            opacity: 0.45;
+            filter: grayscale(0.2);
+        }
+
+        .point-icon {
+            font-size: 26px;
+            margin-bottom: 6px;
+        }
+
+        .point-name {
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 3px;
+        }
+
+        .point-cost {
+            font-size: 10px;
+            color: #e6d9a9;
+        }
+
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .legend-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 10px 12px;
+            font-size: 12px;
+            color: #ddd2aa;
+        }
+
+        .panel {
+            padding: 14px;
+        }
+
+        .selected-title {
+            margin: 0 0 10px 0;
+            color: #fff1b2;
+            font-size: 16px;
+        }
+
+        .selected-text {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #e7ddbf;
+            min-height: 62px;
+        }
+
+        .selected-meta {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .meta-chip {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 7px 10px;
+            font-size: 12px;
+            color: #d6c99c;
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 16px;
+            padding: 15px 14px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+            opacity: 0.94;
+        }
+
+        .btn-main {
+            background: linear-gradient(180deg, #f0d267 0%, var(--gold) 100%);
+            color: #201701;
+        }
+
+        .btn-dark {
+            background: linear-gradient(180deg, #252535 0%, #181824 100%);
+            color: #f5e6b8;
+            border: 1px solid rgba(212,175,55,0.2);
+        }
+
+        .btn-back {
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            padding: 15px 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #d1c8ad;
+            box-shadow: var(--shadow);
+        }
+
+        .warning {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #ffb6b6;
+        }
+
+        @media (max-width: 420px) {
+            .map-container {
+                height: 480px;
+            }
+
+            .point {
+                width: 78px;
+                min-height: 78px;
+            }
+
+            .title {
+                font-size: 24px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="overlay">
-        <div class="stat-panel">
-            <span>❤️ HP: <span id="hp">0</span></span>
-            <span class="energy-txt">⚡ Энергия: <span id="nrg">0</span>/10</span>
+        <div class="page">
+            <div class="hero-card">
+                <h1 class="title">🗺️ Карта мира</h1>
+                <div class="subtitle">Выбери маршрут и отправляйся в опасные земли</div>
+
+                <div class="hud">
+                    <div class="stat">
+                        <div class="label">❤️ HP</div>
+                        <div class="value" id="hp">0 / 0</div>
+                    </div>
+                    <div class="stat energy">
+                        <div class="label">⚡ Энергия</div>
+                        <div class="value" id="nrg">0 / 10</div>
+                    </div>
+                    <div class="stat">
+                        <div class="label">💰 Золото</div>
+                        <div class="value" id="gold">0</div>
+                    </div>
+                    <div class="stat">
+                        <div class="label">🏆 Текущий этаж</div>
+                        <div class="value" id="floor">1</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="map-shell">
+                <div class="map-head">
+                    <h2>Маршруты</h2>
+                    <div class="map-note">Чем дальше зона, тем опаснее враги</div>
+                </div>
+
+                <div class="map-container">
+                    <div class="map-fog"></div>
+
+                    <!-- линии -->
+                    <div class="route" style="left: 145px; top: 390px; width: 6px; height: 110px; transform: rotate(-22deg);"></div>
+                    <div class="route" style="left: 180px; top: 320px; width: 6px; height: 120px; transform: rotate(33deg);"></div>
+                    <div class="route" style="left: 120px; top: 270px; width: 6px; height: 120px; transform: rotate(-18deg);"></div>
+                    <div class="route" style="left: 205px; top: 210px; width: 6px; height: 120px; transform: rotate(18deg);"></div>
+
+                    <!-- точки -->
+                    <div class="point home"
+                         style="left: 110px; top: 400px;"
+                         onclick="selectLocation('home')">
+                        <div class="point-icon">🏠</div>
+                        <div class="point-name">ДОМ</div>
+                        <div class="point-cost">безопасно</div>
+                    </div>
+
+                    <div class="point"
+                         style="left: 40px; top: 285px;"
+                         onclick="selectLocation('cave')">
+                        <div class="point-icon">💀</div>
+                        <div class="point-name">ПЕЩЕРА</div>
+                        <div class="point-cost">-2⚡</div>
+                    </div>
+
+                    <div class="point"
+                         style="left: 200px; top: 255px;"
+                         onclick="selectLocation('forest')">
+                        <div class="point-icon">🌲</div>
+                        <div class="point-name">РУИНЫ</div>
+                        <div class="point-cost">-2⚡</div>
+                    </div>
+
+                    <div class="point"
+                         id="lair-point"
+                         style="left: 55px; top: 120px;"
+                         onclick="selectLocation('lair')">
+                        <div class="point-icon">👹</div>
+                        <div class="point-name">ЛОГОВО</div>
+                        <div class="point-cost">-3⚡</div>
+                    </div>
+
+                    <div class="point"
+                         id="abyss-point"
+                         style="left: 210px; top: 90px;"
+                         onclick="selectLocation('abyss')">
+                        <div class="point-icon">🕳️</div>
+                        <div class="point-name">БЕЗДНА</div>
+                        <div class="point-cost">-4⚡</div>
+                    </div>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item">💀 Пещера — хороший старт для первых походов</div>
+                    <div class="legend-item">🌲 Руины — средняя опасность и неплохая добыча</div>
+                    <div class="legend-item">👹 Логово — тяжелее, но и награда выше</div>
+                    <div class="legend-item">🕳️ Бездна — поздняя зона для крепкого персонажа</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3 class="selected-title" id="sel-title">Выбери точку на карте</h3>
+                <div class="selected-text" id="sel-text">
+                    Нажми на одну из зон, чтобы посмотреть описание и начать путь.
+                </div>
+
+                <div class="selected-meta" id="sel-meta"></div>
+
+                <div class="actions">
+                    <button class="btn btn-main" id="go-btn" type="button" onclick="travelSelected()" disabled>
+                        Отправиться
+                    </button>
+                    <a href="index.html" class="btn-back">↩ Вернуться в Таверну</a>
+                </div>
+
+                <div class="warning" id="warn"></div>
+            </div>
         </div>
-
-        <h2>КАРТА МИРА</h2>
-
-        <div class="map-container">
-            <!-- Деревня (здесь мы сейчас) -->
-            <div class="map-point" style="bottom: 20px; left: 120px; background: #4CAF50;">
-                <span>🏠</span> ДОМ
-            </div>
-
-            <!-- Подземелье 1 -->
-            <div class="map-point" style="top: 150px; left: 30px;" onclick="goToDungeon(1)">
-                <span>💀</span> ПЕЩЕРА
-                <div style="font-size:8px">-2⚡</div>
-            </div>
-
-            <!-- Подземелье 2 -->
-            <div class="map-point" style="top: 50px; right: 40px;" onclick="goToDungeon(5)">
-                <span>👹</span> ЛОГОВО
-                <div style="font-size:8px">-2⚡</div>
-            </div>
-        </div>
-
-        <a href="index.html" class="btn-back">↩ Вернуться в Таверну</a>
     </div>
 
     <script>
-        let p = JSON.parse(localStorage.getItem('rpg_data'));
+        let p = null;
+        let selectedLocation = null;
 
-        function updateUI() {
-            document.getElementById('hp').innerText = Math.floor(p.hp);
-            document.getElementById('nrg').innerText = p.energy || 0;
+        const MAX_ENERGY = 10;
+
+        const LOCATIONS = {
+            home: {
+                id: "home",
+                name: "Дом",
+                icon: "🏠",
+                floor: 1,
+                energyCost: 0,
+                danger: "Безопасно",
+                text: "Твоя отправная точка. Здесь можно перевести дух и вернуться в таверну.",
+                unlocked: () => true,
+                action: "home"
+            },
+            cave: {
+                id: "cave",
+                name: "Пещера",
+                icon: "💀",
+                floor: 1,
+                energyCost: 2,
+                danger: "Низкая",
+                text: "Первое подземелье. Хорошо подходит для старта, фарма золота и обучения боям.",
+                unlocked: () => true,
+                action: "world"
+            },
+            forest: {
+                id: "forest",
+                name: "Руины",
+                icon: "🌲",
+                floor: 3,
+                energyCost: 2,
+                danger: "Средняя",
+                text: "Полузаросшие руины. Здесь враги сильнее, но находки тоже интереснее.",
+                unlocked: () => (p.floor || 1) >= 2,
+                action: "world"
+            },
+            lair: {
+                id: "lair",
+                name: "Логово",
+                icon: "👹",
+                floor: 5,
+                energyCost: 3,
+                danger: "Высокая",
+                text: "Место, где обитают элитные враги. Иди только если уже окреп.",
+                unlocked: () => (p.floor || 1) >= 4 || (p.maxHp || 100) >= 120,
+                action: "world"
+            },
+            abyss: {
+                id: "abyss",
+                name: "Бездна",
+                icon: "🕳️",
+                floor: 8,
+                energyCost: 4,
+                danger: "Очень высокая",
+                text: "Глубокая и опасная зона. Сюда лучше идти подготовленным персонажем.",
+                unlocked: () => (p.floor || 1) >= 7 || (p.maxHp || 100) >= 140,
+                action: "world"
+            }
+        };
+
+        function getPlayer() {
+            try {
+                return JSON.parse(localStorage.getItem('rpg_data') || 'null');
+            } catch (e) {
+                return null;
+            }
         }
 
-        function goToDungeon(floor) {
-            if ((p.energy || 0) < 2) {
-                alert("Недостаточно энергии! Отдохни в таверне.");
+        function save() {
+            localStorage.setItem('rpg_data', JSON.stringify(p));
+        }
+
+        function clamp(value, min, max) {
+            return Math.max(min, Math.min(max, value));
+        }
+
+        function maybeRecoverEnergy() {
+            const now = Date.now();
+            const last = Number(p.lastUpdate || 0);
+
+            if (!last) {
+                p.lastUpdate = now;
+                save();
                 return;
             }
-            p.energy -= 2;
-            p.floor = floor; // Устанавливаем этаж в зависимости от точки
-            save();
-            window.location.href = 'world.html';
+
+            const diff = now - last;
+            const everyMs = 10 * 60 * 1000; // 1 энергия каждые 10 минут
+            const recovered = Math.floor(diff / everyMs);
+
+            if (recovered > 0) {
+                p.energy = clamp((p.energy || 0) + recovered, 0, MAX_ENERGY);
+                p.lastUpdate = now;
+                save();
+            }
         }
 
-        function save() { localStorage.setItem('rpg_data', JSON.stringify(p)); }
+        function updateUI() {
+            document.getElementById('hp').innerText = Math.floor(p.hp || 0) + " / " + Math.floor(p.maxHp || 0);
+            document.getElementById('nrg').innerText = Math.floor(p.energy || 0) + " / " + MAX_ENERGY;
+            document.getElementById('gold').innerText = Math.floor(p.gold || 0);
+            document.getElementById('floor').innerText = Math.floor(p.floor || 1);
+
+            const lairPoint = document.getElementById('lair-point');
+            const abyssPoint = document.getElementById('abyss-point');
+
+            if (!LOCATIONS.lair.unlocked()) lairPoint.classList.add('locked');
+            else lairPoint.classList.remove('locked');
+
+            if (!LOCATIONS.abyss.unlocked()) abyssPoint.classList.add('locked');
+            else abyssPoint.classList.remove('locked');
+        }
+
+        function setSelectedInfo(loc) {
+            document.getElementById('sel-title').innerText = loc.icon + " " + loc.name;
+            document.getElementById('sel-text').innerText = loc.text;
+
+            const meta = [];
+            meta.push(`<div class="meta-chip">Стартовый этаж: ${loc.floor}</div>`);
+            meta.push(`<div class="meta-chip">Энергия: ${loc.energyCost}⚡</div>`);
+            meta.push(`<div class="meta-chip">Опасность: ${loc.danger}</div>`);
+
+            document.getElementById('sel-meta').innerHTML = meta.join("");
+        }
+
+        function setWarning(text) {
+            document.getElementById('warn').innerText = text || "";
+        }
+
+        function selectLocation(id) {
+            const loc = LOCATIONS[id];
+            if (!loc) return;
+
+            selectedLocation = loc;
+            setSelectedInfo(loc);
+
+            const goBtn = document.getElementById('go-btn');
+            goBtn.disabled = false;
+
+            if (!loc.unlocked()) {
+                setWarning("Эта зона пока закрыта. Стань сильнее или пройди глубже.");
+            } else if ((p.energy || 0) < loc.energyCost) {
+                setWarning("Недостаточно энергии для перехода.");
+            } else {
+                setWarning("");
+            }
+        }
+
+        function travelSelected() {
+            if (!selectedLocation) {
+                setWarning("Сначала выбери точку на карте.");
+                return;
+            }
+
+            if (!selectedLocation.unlocked()) {
+                setWarning("Эта зона пока закрыта.");
+                return;
+            }
+
+            if ((p.energy || 0) < selectedLocation.energyCost) {
+                setWarning("Недостаточно энергии. Отдохни в таверне.");
+                return;
+            }
+
+            if (selectedLocation.action === "home") {
+                window.location.href = "index.html";
+                return;
+            }
+
+            p.energy -= selectedLocation.energyCost;
+            p.floor = selectedLocation.floor;
+            p.lastUpdate = Date.now();
+            save();
+
+            window.location.href = "world.html";
+        }
+
+        p = getPlayer();
+
+        if (!p || !p.name) {
+            window.location.replace('create.html');
+        }
+
+        if (typeof p.hp !== "number") p.hp = 100;
+        if (typeof p.maxHp !== "number") p.maxHp = 100;
+        if (typeof p.energy !== "number") p.energy = 10;
+        if (typeof p.gold !== "number") p.gold = 100;
+        if (typeof p.floor !== "number") p.floor = 1;
+
+        maybeRecoverEnergy();
         updateUI();
     </script>
 </body>
