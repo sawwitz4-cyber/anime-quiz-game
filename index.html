@@ -3,99 +3,326 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Path of Shinobi</title>
-    
-    <!-- ИСПРАВЛЕНО: Прямые ссылки на скрипты -->
-    <script src="https://telegram.org"></script>
-    <script src="https://gstatic.com"></script>
-    <script src="https://gstatic.com"></script>
+    <title>Shinobi Tavern - Dev</title>
+
+    <!-- Правильный SDK Telegram WebApp -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- Правильный Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
     <style>
-        :root { --gold: #d4af37; --bg: #0d0d12; --card: #1a1a24; --accent: #00ffcc; }
-        body { background: var(--bg); color: #f4e4bc; font-family: sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; opacity: 1; }
-        .top-info { width: 100%; padding: 20px; background: linear-gradient(180deg, rgba(212, 175, 55, 0.1) 0%, rgba(0,0,0,0) 100%); text-align: center; box-sizing: border-box; }
-        .profile-card { background: var(--card); border: 2px solid var(--gold); border-radius: 25px; padding: 20px; width: 85%; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .stat-row { display: flex; justify-content: space-between; margin: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 3px; font-size: 14px; }
-        .main-btn { background: linear-gradient(135deg, #800 0%, #c00 100%); color: white; border: none; padding: 16px; width: 85%; border-radius: 15px; font-size: 18px; font-weight: bold; text-transform: uppercase; text-decoration: none; display: block; text-align: center; margin-bottom: 12px; }
-        .chat-box { width: 85%; background: var(--card); border: 1px solid #333; border-radius: 20px; padding: 15px; box-sizing: border-box; }
-        .chat-messages { height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; text-align: left; }
-        .msg { font-size: 12px; background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 10px; }
-        .msg b { color: var(--gold); }
-        .chat-input-area { display: flex; gap: 8px; }
-        .chat-input { flex: 1; background: #000; border: 1px solid #444; color: white; padding: 10px; border-radius: 10px; font-size: 13px; outline: none; }
-        .chat-send { background: var(--gold); border: none; padding: 0 15px; border-radius: 10px; font-weight: bold; cursor: pointer; color: #000; }
+        :root {
+            --gold: #d4af37;
+            --bg: #0d0d12;
+            --card: #1a1a24;
+            --accent: #00ffcc;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: #f4e4bc;
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .profile-card {
+            background: var(--card);
+            border: 2px solid var(--gold);
+            border-radius: 20px;
+            padding: 15px;
+            width: 90%;
+            margin-top: 20px;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 14px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 4px;
+        }
+
+        .main-btn {
+            background: #800;
+            color: white;
+            border: none;
+            padding: 15px;
+            width: 90%;
+            border-radius: 12px;
+            font-weight: bold;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            margin: 15px 0;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .chat-box {
+            width: 90%;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 15px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        .chat-msgs {
+            height: 180px;
+            overflow-y: auto;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            text-align: left;
+        }
+
+        .msg {
+            background: #1a1a24;
+            padding: 8px 10px;
+            border-radius: 8px;
+            word-break: break-word;
+        }
+
+        .msg b {
+            color: var(--gold);
+        }
+
+        .sys-msg {
+            background: #222;
+            color: #bbb;
+            font-size: 12px;
+            padding: 8px 10px;
+            border-radius: 8px;
+        }
+
+        .chat-in-row {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        input {
+            flex: 1;
+            background: #000;
+            border: 1px solid #444;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .send-btn {
+            background: var(--gold);
+            border: none;
+            padding: 0 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #000;
+            min-width: 48px;
+        }
     </style>
 </head>
 <body>
-    <div class="top-info">
-        <h1 id="hero-name" style="margin:0; font-size: 24px;">Шиноби</h1>
-    </div>
 
     <div class="profile-card">
-        <div class="stat-row"><span>💰 Золото:</span> <b id="hero-gold">0</b></div>
-        <div class="stat-row"><span>⚡ Энергия:</span> <b id="hero-nrg">0/10</b></div>
-        <div class="stat-row"><span>❤️ HP:</span> <b id="hero-hp">0/0</b></div>
+        <h2 id="p-name" style="margin:0">Загрузка...</h2>
+        <div class="stat"><span>💰 Золото:</span> <b id="p-gold">0</b></div>
+        <div class="stat"><span>⚡ Энергия:</span> <b id="p-nrg">0</b></div>
+        <div class="stat"><span>❤️ HP:</span> <b id="p-hp">0/0</b></div>
     </div>
 
-    <a href="map.html" class="main-btn">В ПУТЬ 🗺️</a>
+    <div class="main-btn" onclick="location.href='map.html'">В ПУТЬ 🗺️</div>
 
     <div class="chat-box">
-        <div id="chat-msgs" class="chat-messages"></div>
-        <div class="chat-input-area">
-            <input type="text" id="chat-in" class="chat-input" placeholder="Чат...">
-            <button class="chat-send" onclick="sendMsg()">></button>
+        <div id="chat-msgs" class="chat-msgs"></div>
+        <div class="chat-in-row">
+            <input type="text" id="chat-in" placeholder="Сообщение...">
+            <button class="send-btn" onclick="sendMsg()">></button>
         </div>
     </div>
 
     <script>
-        var p = JSON.parse(localStorage.getItem('rpg_data')) || {};
-        var chatRef;
-
-        window.sendMsg = function() {
-            var input = document.getElementById('chat-in');
-            if (!input || !chatRef) return;
-            var text = input.value.trim();
-            if (text && p.name) {
-                chatRef.push({ user: p.name, text: text, timestamp: Date.now() });
-                input.value = "";
+        (function () {
+            // Telegram WebApp
+            const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+            if (tg) {
+                tg.ready();
+                tg.expand();
             }
-        };
 
-        window.onload = function() {
-            var config = {
-                apiKey: atob("QUl6YVN5QUpiOTVTa0VyZFFoLWtOZ25BMWg0dWlQZTZhNndVdW9n"),
-                authDomain: "://firebaseapp.com",
-                databaseURL: "https://firebaseio.com",
+            // Игрок
+            const savedPlayer = JSON.parse(localStorage.getItem('rpg_data') || 'null');
+            const tgUserName =
+                (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name)
+                    ? tg.initDataUnsafe.user.first_name
+                    : "";
+
+            const p = savedPlayer || {
+                name: tgUserName || "Шиноби",
+                gold: 100,
+                hp: 100,
+                maxHp: 100,
+                energy: 10
+            };
+
+            if (!p.name) {
+                p.name = tgUserName || "Шиноби";
+            }
+
+            localStorage.setItem('rpg_data', JSON.stringify(p));
+
+            function updateUI() {
+                document.getElementById('p-name').innerText = p.name || "Шиноби";
+                document.getElementById('p-gold').innerText = Math.floor(Number(p.gold) || 0);
+                document.getElementById('p-nrg').innerText = Math.floor(Number(p.energy) || 10);
+                document.getElementById('p-hp').innerText =
+                    Math.floor(Number(p.hp) || 0) + "/" + Math.floor(Number(p.maxHp) || 100);
+            }
+
+            const chatBox = document.getElementById('chat-msgs');
+            const chatInput = document.getElementById('chat-in');
+
+            function addSystemMessage(text) {
+                const div = document.createElement('div');
+                div.className = 'sys-msg';
+                div.textContent = text;
+                chatBox.appendChild(div);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+
+            // Firebase config
+            // ВАЖНО: если в Firebase Console у тебя databaseURL другой
+            // (например ...firebasedatabase.app), вставь точный URL оттуда.
+            const firebaseConfig = {
+                apiKey: "AIzaSyAJb95SkErdQh-kNgnA1h4uiPe6a6wUuog",
+                authDomain: "shinobichat-f6a61.firebaseapp.com",
+                databaseURL: "https://shinobichat-f6a61-default-rtdb.firebaseio.com",
                 projectId: "shinobichat-f6a61",
                 storageBucket: "shinobichat-f6a61.firebasestorage.app",
                 messagingSenderId: "150871531506",
                 appId: "1:150871531506:web:5ad10630596790dc95d56b"
             };
 
-            if (typeof firebase !== 'undefined') {
-                firebase.initializeApp(config);
-                chatRef = firebase.database().ref('messages');
-                chatRef.limitToLast(20).on('value', function(snap) {
-                    var box = document.getElementById('chat-msgs');
-                    box.innerHTML = "";
-                    var data = snap.val();
-                    if (data) {
-                        Object.values(data).forEach(function(m) {
-                            box.innerHTML += '<div class="msg"><b>' + m.user + ':</b> ' + m.text + '</div>';
-                        });
-                        box.scrollTop = box.scrollHeight;
-                    }
+            let chatRef = null;
+            let messagesQuery = null;
+
+            function renderMessages(snapshot) {
+                chatBox.innerHTML = "";
+
+                if (!snapshot.exists()) {
+                    addSystemMessage("Чат пуст. Напиши первое сообщение.");
+                    return;
+                }
+
+                snapshot.forEach(function (childSnap) {
+                    const m = childSnap.val() || {};
+
+                    const div = document.createElement('div');
+                    div.className = 'msg';
+
+                    const name = document.createElement('b');
+                    name.textContent = (m.user || "Игрок") + ": ";
+
+                    const textNode = document.createTextNode(m.text || "");
+
+                    div.appendChild(name);
+                    div.appendChild(textNode);
+                    chatBox.appendChild(div);
                 });
+
+                chatBox.scrollTop = chatBox.scrollHeight;
             }
 
-            if (!p.name) { window.location.replace('create.html'); }
-            else {
-                document.getElementById('hero-name').innerText = p.name;
-                document.getElementById('hero-gold').innerText = Math.floor(p.gold || 0);
-                document.getElementById('hero-hp').innerText = Math.floor(p.hp || 100) + '/' + (p.maxHp || 100);
-                document.getElementById('hero-nrg').innerText = Math.floor(p.energy || 10) + '/10';
+            function initFirebaseChat() {
+                if (typeof firebase === 'undefined') {
+                    console.error('Firebase SDK не загрузился');
+                    addSystemMessage("Ошибка: Firebase SDK не загрузился.");
+                    return;
+                }
+
+                try {
+                    if (!firebase.apps.length) {
+                        firebase.initializeApp(firebaseConfig);
+                    }
+
+                    const db = firebase.database();
+                    chatRef = db.ref('messages');
+                    messagesQuery = chatRef.orderByChild('timestamp').limitToLast(20);
+
+                    messagesQuery.on(
+                        'value',
+                        function (snapshot) {
+                            renderMessages(snapshot);
+                        },
+                        function (error) {
+                            console.error('Ошибка чтения чата:', error);
+                            addSystemMessage("Ошибка чтения чата. Проверь databaseURL и Rules в Firebase.");
+                        }
+                    );
+                } catch (e) {
+                    console.error('Ошибка инициализации Firebase:', e);
+                    addSystemMessage("Firebase не инициализировался. Проверь config.");
+                }
             }
-        };
+
+            window.sendMsg = function () {
+                const text = chatInput.value.trim();
+
+                if (!text) return;
+
+                if (!chatRef) {
+                    addSystemMessage("Чат еще не подключился.");
+                    return;
+                }
+
+                if (!p.name) {
+                    addSystemMessage("Не найдено имя игрока.");
+                    return;
+                }
+
+                chatRef.push(
+                    {
+                        user: p.name,
+                        text: text,
+                        timestamp: Date.now()
+                    },
+                    function (error) {
+                        if (error) {
+                            console.error('Ошибка отправки:', error);
+                            addSystemMessage("Не удалось отправить сообщение.");
+                            return;
+                        }
+
+                        chatInput.value = "";
+                    }
+                );
+            };
+
+            chatInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    window.sendMsg();
+                }
+            });
+
+            window.addEventListener('load', function () {
+                updateUI();
+                initFirebaseChat();
+            });
+        })();
     </script>
 </body>
 </html>
