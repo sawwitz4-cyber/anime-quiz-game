@@ -3,326 +3,389 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shinobi Tavern - Dev</title>
+    <title>Shinobi Tavern - Index</title>
 
-    <!-- Правильный SDK Telegram WebApp -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-    <!-- Правильный Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+    <link rel="stylesheet" href="chat.css">
 
     <style>
         :root {
             --gold: #d4af37;
+            --gold-soft: rgba(212, 175, 55, 0.18);
             --bg: #0d0d12;
-            --card: #1a1a24;
-            --accent: #00ffcc;
+            --card: #181822;
+            --card-2: #1f1f2b;
+            --text: #f4e4bc;
+            --muted: #bfae7c;
+            --danger: #8b1e1e;
+            --danger-2: #b92a2a;
+            --line: rgba(255,255,255,0.08);
+            --shadow: 0 10px 30px rgba(0,0,0,0.35);
         }
 
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
-            background: var(--bg);
-            color: #f4e4bc;
-            font-family: sans-serif;
             margin: 0;
-            padding: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top, rgba(212,175,55,0.08), transparent 30%),
+                linear-gradient(180deg, #0b0b10 0%, #11111a 100%);
+            display: flex;
+            justify-content: center;
+            padding: 18px 12px 30px;
+        }
+
+        .page {
+            width: 100%;
+            max-width: 520px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
+            gap: 16px;
+        }
+
+        .hero-card {
+            background: linear-gradient(180deg, var(--card) 0%, var(--card-2) 100%);
+            border: 1px solid rgba(212,175,55,0.35);
+            border-radius: 22px;
+            padding: 18px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(212,175,55,0.08), transparent 38%);
+            pointer-events: none;
+        }
+
+        .title-wrap {
+            position: relative;
+            z-index: 1;
+            margin-bottom: 14px;
+        }
+
+        .game-title {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #fff3c4;
+        }
+
+        .subtitle {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 13px;
         }
 
         .profile-card {
-            background: var(--card);
-            border: 2px solid var(--gold);
-            border-radius: 20px;
-            padding: 15px;
-            width: 90%;
-            margin-top: 20px;
+            position: relative;
+            z-index: 1;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 14px;
+        }
+
+        .profile-name {
+            margin: 0 0 12px 0;
+            font-size: 21px;
+            color: #fff2b3;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
         }
 
         .stat {
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            margin: 5px 0;
-            font-size: 14px;
-            border-bottom: 1px solid #333;
-            padding-bottom: 4px;
-        }
-
-        .main-btn {
-            background: #800;
-            color: white;
-            border: none;
-            padding: 15px;
-            width: 90%;
+            gap: 12px;
+            background: rgba(0,0,0,0.16);
+            border: 1px solid rgba(255,255,255,0.05);
             border-radius: 12px;
-            font-weight: bold;
-            text-decoration: none;
-            display: block;
-            text-align: center;
-            margin: 15px 0;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .chat-box {
-            width: 90%;
-            background: #111;
-            border: 1px solid #333;
-            border-radius: 15px;
-            padding: 10px;
-            margin-bottom: 20px;
-        }
-
-        .chat-msgs {
-            height: 180px;
-            overflow-y: auto;
-            font-size: 13px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            text-align: left;
-        }
-
-        .msg {
-            background: #1a1a24;
-            padding: 8px 10px;
-            border-radius: 8px;
-            word-break: break-word;
-        }
-
-        .msg b {
-            color: var(--gold);
-        }
-
-        .sys-msg {
-            background: #222;
-            color: #bbb;
-            font-size: 12px;
-            padding: 8px 10px;
-            border-radius: 8px;
-        }
-
-        .chat-in-row {
-            display: flex;
-            gap: 5px;
-            margin-top: 10px;
-        }
-
-        input {
-            flex: 1;
-            background: #000;
-            border: 1px solid #444;
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            outline: none;
+            padding: 10px 12px;
             font-size: 14px;
         }
 
-        .send-btn {
-            background: var(--gold);
+        .stat span {
+            color: #d8cba2;
+        }
+
+        .stat b {
+            color: #fff5ca;
+        }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .nav-btn,
+        .wide-btn,
+        .danger-btn {
             border: none;
-            padding: 0 15px;
-            border-radius: 8px;
-            font-weight: bold;
+            border-radius: 16px;
+            padding: 14px 12px;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
             cursor: pointer;
-            color: #000;
-            min-width: 48px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .nav-btn:active,
+        .wide-btn:active,
+        .danger-btn:active {
+            transform: scale(0.98);
+        }
+
+        .nav-btn {
+            background: linear-gradient(180deg, #262637 0%, #1a1a26 100%);
+            border: 1px solid rgba(212,175,55,0.25);
+            color: #fff0bb;
+            min-height: 60px;
+        }
+
+        .nav-btn:hover,
+        .wide-btn:hover,
+        .danger-btn:hover {
+            opacity: 0.95;
+        }
+
+        .wide-btn {
+            background: linear-gradient(180deg, #8f1212 0%, #661010 100%);
+            min-height: 58px;
+        }
+
+        .danger-btn {
+            background: linear-gradient(180deg, var(--danger-2) 0%, var(--danger) 100%);
+            min-height: 56px;
+        }
+
+        .section-card {
+            background: linear-gradient(180deg, var(--card) 0%, var(--card-2) 100%);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 20px;
+            padding: 14px;
+            box-shadow: var(--shadow);
+        }
+
+        .section-title {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            color: #fff1b6;
+        }
+
+        .hint {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .reset-note {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(212,175,55,0.08);
+            border: 1px solid rgba(212,175,55,0.15);
+            font-size: 12px;
+            color: #e5d7aa;
+            line-height: 1.45;
+        }
+
+        @media (max-width: 420px) {
+            .nav-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .game-title {
+                font-size: 22px;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="page">
+        <div class="hero-card">
+            <div class="title-wrap">
+                <h1 class="game-title">🏮 Shinobi Tavern</h1>
+                <div class="subtitle">Таверна шиноби, карта, профиль, магазин и глобальный чат</div>
+            </div>
 
-    <div class="profile-card">
-        <h2 id="p-name" style="margin:0">Загрузка...</h2>
-        <div class="stat"><span>💰 Золото:</span> <b id="p-gold">0</b></div>
-        <div class="stat"><span>⚡ Энергия:</span> <b id="p-nrg">0</b></div>
-        <div class="stat"><span>❤️ HP:</span> <b id="p-hp">0/0</b></div>
-    </div>
+            <div class="profile-card">
+                <h2 id="p-name" class="profile-name">Загрузка...</h2>
 
-    <div class="main-btn" onclick="location.href='map.html'">В ПУТЬ 🗺️</div>
+                <div class="stats-grid">
+                    <div class="stat">
+                        <span>💰 Золото</span>
+                        <b id="p-gold">0</b>
+                    </div>
+                    <div class="stat">
+                        <span>⚡ Энергия</span>
+                        <b id="p-nrg">0</b>
+                    </div>
+                    <div class="stat">
+                        <span>❤️ HP</span>
+                        <b id="p-hp">0/0</b>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <div class="chat-box">
-        <div id="chat-msgs" class="chat-msgs"></div>
-        <div class="chat-in-row">
-            <input type="text" id="chat-in" placeholder="Сообщение...">
-            <button class="send-btn" onclick="sendMsg()">></button>
+        <div class="section-card">
+            <h3 class="section-title">Навигация</h3>
+
+            <div class="nav-grid">
+                <a class="nav-btn" href="profile.html">👤 Профиль</a>
+                <a class="nav-btn" href="shop.html">🛒 Магазин</a>
+            </div>
+
+            <div style="margin-top: 10px;">
+                <a class="wide-btn" href="map.html">🗺️ В путь</a>
+            </div>
+
+            <div class="hint">Выбери раздел игры</div>
+        </div>
+
+        <div class="section-card">
+            <h3 class="section-title">Управление аккаунтом</h3>
+
+            <button class="danger-btn" id="reset-btn" type="button">
+                ♻️ Сбросить аккаунт за 100 золота
+            </button>
+
+            <div class="reset-note">
+                После сброса данные персонажа удаляются, и ты перейдешь на страницу создания нового героя.
+            </div>
+        </div>
+
+        <div class="section-card">
+            <h3 class="section-title">Чат</h3>
+            <div id="chat-root"></div>
         </div>
     </div>
 
     <script>
-        (function () {
-            // Telegram WebApp
-            const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-            if (tg) {
-                tg.ready();
-                tg.expand();
+        const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
+
+        const tgUserName =
+            (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name)
+                ? tg.initDataUnsafe.user.first_name
+                : "";
+
+        function getPlayer() {
+            try {
+                return JSON.parse(localStorage.getItem('rpg_data') || 'null');
+            } catch (e) {
+                return null;
+            }
+        }
+
+        let p = getPlayer();
+
+        // Если персонажа нет — сразу отправляем на create.html
+        if (!p || !p.name) {
+            window.location.replace('create.html');
+        }
+
+        // Подстраховка
+        if (!p.name) {
+            p.name = tgUserName || "Шиноби";
+        }
+        if (typeof p.gold !== "number") p.gold = 100;
+        if (typeof p.hp !== "number") p.hp = 100;
+        if (typeof p.maxHp !== "number") p.maxHp = 100;
+        if (typeof p.energy !== "number") p.energy = 10;
+
+        localStorage.setItem('rpg_data', JSON.stringify(p));
+
+        function updateUI() {
+            document.getElementById('p-name').innerText = p.name || "Шиноби";
+            document.getElementById('p-gold').innerText = Math.floor(Number(p.gold) || 0);
+            document.getElementById('p-nrg').innerText = Math.floor(Number(p.energy) || 0);
+            document.getElementById('p-hp').innerText =
+                Math.floor(Number(p.hp) || 0) + "/" + Math.floor(Number(p.maxHp) || 0);
+        }
+
+        function resetAccount() {
+            const price = 100;
+            const gold = Number(p.gold) || 0;
+
+            if (gold < price) {
+                alert("Недостаточно золота. Нужно 100 золота для сброса аккаунта.");
+                return;
             }
 
-            // Игрок
-            const savedPlayer = JSON.parse(localStorage.getItem('rpg_data') || 'null');
-            const tgUserName =
-                (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name)
-                    ? tg.initDataUnsafe.user.first_name
-                    : "";
+            const ok = confirm(
+                "Сбросить аккаунт за 100 золота?\n\n" +
+                "Персонаж будет удален, и ты перейдешь на create.html"
+            );
 
-            const p = savedPlayer || {
-                name: tgUserName || "Шиноби",
-                gold: 100,
-                hp: 100,
-                maxHp: 100,
-                energy: 10
-            };
+            if (!ok) return;
 
-            if (!p.name) {
-                p.name = tgUserName || "Шиноби";
-            }
+            // Если тебе нужен именно полный сброс персонажа:
+            localStorage.removeItem('rpg_data');
 
-            localStorage.setItem('rpg_data', JSON.stringify(p));
+            // Если есть другие игровые ключи — можно чистить и их:
+            // localStorage.removeItem('inventory');
+            // localStorage.removeItem('quests');
+            // localStorage.removeItem('map_state');
 
-            function updateUI() {
-                document.getElementById('p-name').innerText = p.name || "Шиноби";
-                document.getElementById('p-gold').innerText = Math.floor(Number(p.gold) || 0);
-                document.getElementById('p-nrg').innerText = Math.floor(Number(p.energy) || 10);
-                document.getElementById('p-hp').innerText =
-                    Math.floor(Number(p.hp) || 0) + "/" + Math.floor(Number(p.maxHp) || 100);
-            }
+            window.location.href = 'create.html';
+        }
 
-            const chatBox = document.getElementById('chat-msgs');
-            const chatInput = document.getElementById('chat-in');
+        document.getElementById('reset-btn').addEventListener('click', resetAccount);
 
-            function addSystemMessage(text) {
-                const div = document.createElement('div');
-                div.className = 'sys-msg';
-                div.textContent = text;
-                chatBox.appendChild(div);
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }
+        updateUI();
+    </script>
 
-            // Firebase config
-            // ВАЖНО: если в Firebase Console у тебя databaseURL другой
-            // (например ...firebasedatabase.app), вставь точный URL оттуда.
-            const firebaseConfig = {
-                apiKey: "AIzaSyAJb95SkErdQh-kNgnA1h4uiPe6a6wUuog",
-                authDomain: "shinobichat-f6a61.firebaseapp.com",
-                databaseURL: "https://shinobichat-f6a61-default-rtdb.firebaseio.com",
-                projectId: "shinobichat-f6a61",
-                storageBucket: "shinobichat-f6a61.firebasestorage.app",
-                messagingSenderId: "150871531506",
-                appId: "1:150871531506:web:5ad10630596790dc95d56b"
-            };
-
-            let chatRef = null;
-            let messagesQuery = null;
-
-            function renderMessages(snapshot) {
-                chatBox.innerHTML = "";
-
-                if (!snapshot.exists()) {
-                    addSystemMessage("Чат пуст. Напиши первое сообщение.");
-                    return;
-                }
-
-                snapshot.forEach(function (childSnap) {
-                    const m = childSnap.val() || {};
-
-                    const div = document.createElement('div');
-                    div.className = 'msg';
-
-                    const name = document.createElement('b');
-                    name.textContent = (m.user || "Игрок") + ": ";
-
-                    const textNode = document.createTextNode(m.text || "");
-
-                    div.appendChild(name);
-                    div.appendChild(textNode);
-                    chatBox.appendChild(div);
-                });
-
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }
-
-            function initFirebaseChat() {
-                if (typeof firebase === 'undefined') {
-                    console.error('Firebase SDK не загрузился');
-                    addSystemMessage("Ошибка: Firebase SDK не загрузился.");
-                    return;
-                }
-
-                try {
-                    if (!firebase.apps.length) {
-                        firebase.initializeApp(firebaseConfig);
-                    }
-
-                    const db = firebase.database();
-                    chatRef = db.ref('messages');
-                    messagesQuery = chatRef.orderByChild('timestamp').limitToLast(20);
-
-                    messagesQuery.on(
-                        'value',
-                        function (snapshot) {
-                            renderMessages(snapshot);
-                        },
-                        function (error) {
-                            console.error('Ошибка чтения чата:', error);
-                            addSystemMessage("Ошибка чтения чата. Проверь databaseURL и Rules в Firebase.");
-                        }
-                    );
-                } catch (e) {
-                    console.error('Ошибка инициализации Firebase:', e);
-                    addSystemMessage("Firebase не инициализировался. Проверь config.");
-                }
-            }
-
-            window.sendMsg = function () {
-                const text = chatInput.value.trim();
-
-                if (!text) return;
-
-                if (!chatRef) {
-                    addSystemMessage("Чат еще не подключился.");
-                    return;
-                }
-
-                if (!p.name) {
-                    addSystemMessage("Не найдено имя игрока.");
-                    return;
-                }
-
-                chatRef.push(
-                    {
-                        user: p.name,
-                        text: text,
-                        timestamp: Date.now()
+    <script src="chat.js"></script>
+    <script>
+        window.addEventListener('load', function () {
+            if (window.ChatWidget) {
+                ChatWidget.init({
+                    rootId: 'chat-root',
+                    player: p,
+                    firebaseConfig: {
+                        apiKey: "AIzaSyAJb95SkErdQh-kNgnA1h4uiPe6a6wUuog",
+                        authDomain: "shinobichat-f6a61.firebaseapp.com",
+                        databaseURL: "https://shinobichat-f6a61-default-rtdb.firebaseio.com",
+                        projectId: "shinobichat-f6a61",
+                        storageBucket: "shinobichat-f6a61.firebasestorage.app",
+                        messagingSenderId: "150871531506",
+                        appId: "1:150871531506:web:5ad10630596790dc95d56b"
                     },
-                    function (error) {
-                        if (error) {
-                            console.error('Ошибка отправки:', error);
-                            addSystemMessage("Не удалось отправить сообщение.");
-                            return;
-                        }
-
-                        chatInput.value = "";
-                    }
-                );
-            };
-
-            chatInput.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    window.sendMsg();
-                }
-            });
-
-            window.addEventListener('load', function () {
-                updateUI();
-                initFirebaseChat();
-            });
-        })();
+                    path: 'messages'
+                });
+            }
+        });
     </script>
 </body>
 </html>
